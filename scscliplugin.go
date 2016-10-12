@@ -58,11 +58,31 @@ func (c *SCSPlugin) GetMetadata() plugin.PluginMetadata {
 			{
 				Name:     "service-registry",
 				HelpText: "Manage the SCS service registry",
-
-				// UsageDetails is optional
-				// It is used to show help of usage of each command
+				Alias:    "sr",
 				UsageDetails: plugin.Usage{
-					Usage: "service-registry\n   cf service-registry",
+					Usage:
+`Dump service registry as JSON:
+   cf service-registry dump APP_NAME
+
+   Print table of service registry applications:
+   cf service-registry apps APP_NAME
+
+   Override the status of a bound app's instances:
+   cf service-registry override-status APP_NAME STATUS
+
+   where STATUS is one of:
+      UP - Ready to receive traffic
+      DOWN - Not ready to receive traffic because the application failed a health check
+      STARTING - Not ready to receive traffic because application is initializing
+      OUT_OF_SERVICE - Intentionally not ready to receive traffic
+      UNKNOWN - May or may not  be ready to receive traffic, the true status will be determined automatically
+
+   Delete a status override, optionally setting the status of the bound application's
+   instances, or allowing it to be determined automatically:
+   cf service-registry delete-override APP_NAME [STATUS]
+
+   The affected instance records are printed.
+`,
 				},
 			},
 		},
