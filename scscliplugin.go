@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"bitbucket.org/glyn/scscliplugin/eureka"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"code.cloudfoundry.org/cli/plugin"
 	"os"
 )
@@ -20,7 +20,11 @@ func (c *SCSPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	switch getSubcommand(args) {
 
 	case "dump":
-		eureka.Dump(cliConnection, getApplicationName(args))
+		registryJson, err := eureka.Dump(cliConnection, getApplicationName(args))
+		if err != nil {
+			diagnose(err.Error())
+		}
+		fmt.Println(registryJson)
 
 	default:
 		diagnose("Invalid subcommand.")
@@ -81,7 +85,7 @@ func (c *SCSPlugin) GetMetadata() plugin.PluginMetadata {
       DOWN - Not ready to receive traffic because the application failed a health check
       STARTING - Not ready to receive traffic because application is initializing
       OUT_OF_SERVICE - Intentionally not ready to receive traffic
-      UNKNOWN - May or may not  be ready to receive traffic, the true status will be determined automatically
+      UNKNOWN - May or may not be ready to receive traffic, the true status will be determined automatically
 
    Delete a status override, optionally setting the status of the bound application's
    instances, or allowing it to be determined automatically and print the affected instance records:
@@ -95,4 +99,20 @@ func (c *SCSPlugin) GetMetadata() plugin.PluginMetadata {
 
 func main() {
 	plugin.Start(new(SCSPlugin))
+}
+
+type SubcommandError struct {
+	message  string
+	cause error
+}
+
+func (se *SubcommandError) Error() string {
+	return fmt.Sprintf("%s: %s", se.message, se.cause)
+}
+
+func NewSubcommandError(message string, cause error) error {
+	return &SubcommandError{
+		message: message,
+		cause: cause,
+	}
 }
