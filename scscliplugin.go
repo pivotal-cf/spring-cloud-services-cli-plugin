@@ -17,8 +17,6 @@ func (c *SCSPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
 	}
 
-	fmt.Printf("args: %#v\n", args)
-
 	switch getSubcommand(args) {
 
 	case "dump":
