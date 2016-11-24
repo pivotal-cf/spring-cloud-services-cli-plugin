@@ -45,7 +45,7 @@ $ go test github.com/pivotal-cf/spring-cloud-services-cli-plugin/...
 If you prefer to run tests using Ginkgo, change directory to a specific package and
 run Ginkgo from there. For example:
 ```bash
-$ cd $GOPATH/bin/spring-cloud-services-cli-plugin/eureka
+$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka
 $ ginkgo
 ```
 
