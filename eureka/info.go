@@ -37,6 +37,7 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 
 	req, err := http.NewRequest("GET", eureka+"info", nil)
 	if err != nil {
+		// Should never get here
 		return "", fmt.Errorf("Unexpected error: %s", err)
 	}
 	req.Header.Add("Accept", "application/json")
