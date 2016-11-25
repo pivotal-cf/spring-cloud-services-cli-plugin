@@ -8,9 +8,9 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
+	"io/ioutil"
 	"net/http"
 	"strings"
-	"io/ioutil"
 )
 
 var _ = Describe("Service Registry Info", func() {
@@ -145,7 +145,7 @@ var _ = Describe("Service Registry Info", func() {
 			Context("and the response is valid", func() {
 				var (
 					output string
-					err error
+					err    error
 				)
 
 				BeforeEach(func() {

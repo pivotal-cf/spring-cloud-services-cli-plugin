@@ -3,13 +3,13 @@ package eureka
 import (
 	"bytes"
 	"code.cloudfoundry.org/cli/plugin"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"net/http"
 	"net/url"
 	"strings"
-	"errors"
-	"encoding/json"
 )
 
 type Peer struct {
@@ -35,7 +35,7 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 		return "", fmt.Errorf("Invalid service registry dashboard URL: %s", err)
 	}
 
-	req, err := http.NewRequest("GET", eureka + "info", nil)
+	req, err := http.NewRequest("GET", eureka+"info", nil)
 	if err != nil {
 		return "", fmt.Errorf("Unexpected error: %s", err)
 	}
@@ -81,7 +81,7 @@ func eurekaFromDashboard(dashboardUrl string) (string, error) {
 	if len(segments) == 0 || (len(segments) == 1 && segments[0] == "") {
 		return "", fmt.Errorf("path of %s has no segments", dashboardUrl)
 	}
-	guid := segments[len(segments) - 1]
+	guid := segments[len(segments)-1]
 
 	url.Host = "eureka-" + guid + "." + strings.Join(labels[1:], ".")
 	url.Path = "/"
