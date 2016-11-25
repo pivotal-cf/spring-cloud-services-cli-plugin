@@ -14,13 +14,21 @@ import (
 )
 
 var _ = Describe("Service Registry Info", func() {
-	var fakeCliConnection *pluginfakes.FakeCliConnection
-	var fakeClient *httpclientfakes.FakeClient
-	var getServiceModel plugin_models.GetService_Model
+	var (
+		fakeCliConnection *pluginfakes.FakeCliConnection
+		fakeClient        *httpclientfakes.FakeClient
+		getServiceModel   plugin_models.GetService_Model
+		output            string
+		err               error
+	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeClient = &httpclientfakes.FakeClient{}
+	})
+
+	JustBeforeEach(func() {
+		output, err = eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 	})
 
 	Context("when the service is not found", func() {
@@ -29,7 +37,6 @@ var _ = Describe("Service Registry Info", func() {
 		})
 
 		It("should return a suitable error", func() {
-			_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 			Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
 			Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal("some-service-registry"))
 			Expect(err).To(HaveOccurred())
@@ -45,7 +52,6 @@ var _ = Describe("Service Registry Info", func() {
 			})
 
 			It("should return a suitable error", func() {
-				_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Invalid service registry dashboard URL: parse ://: missing protocol scheme"))
 			})
@@ -58,7 +64,6 @@ var _ = Describe("Service Registry Info", func() {
 			})
 
 			It("should return a suitable error", func() {
-				_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Invalid service registry dashboard URL: hostname of https://a has less than two labels"))
 			})
@@ -71,7 +76,6 @@ var _ = Describe("Service Registry Info", func() {
 			})
 
 			It("should return a suitable error", func() {
-				_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Invalid service registry dashboard URL: path of https://spring-cloud-broker.some.host.name has no segments"))
 			})
@@ -84,31 +88,12 @@ var _ = Describe("Service Registry Info", func() {
 			fakeCliConnection.GetServiceReturns(getServiceModel, nil)
 		})
 
-		It("should send a request to the correct URL", func() {
-			fakeClient.DoReturns(nil, errors.New("some error")) // easier than providing a valid response
-			eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
-			Expect(fakeClient.DoCallCount()).To(Equal(1))
-			req := fakeClient.DoArgsForCall(0)
-			Expect(req.URL.String()).To(Equal("https://eureka-some-guid.some.host.name/info"))
-
-		})
-
-		It("should send a request with the correct accept header", func() {
-			fakeClient.DoReturns(nil, errors.New("some error")) // easier than providing a valid response
-			eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
-			Expect(fakeClient.DoCallCount()).To(Equal(1))
-			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Header.Get("Accept")).To(Equal("application/json"))
-
-		})
-
 		Context("but eureka cannot be contacted", func() {
 			BeforeEach(func() {
 				fakeClient.DoReturns(nil, errors.New("some error"))
 			})
 
 			It("should return a suitable error", func() {
-				_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Service registry unavailable: some error"))
 			})
@@ -120,7 +105,6 @@ var _ = Describe("Service Registry Info", func() {
 			})
 
 			It("should return a hint", func() {
-				_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("Hint:"))
 			})
@@ -134,7 +118,6 @@ var _ = Describe("Service Registry Info", func() {
 				})
 
 				It("should return a suitable error", func() {
-					_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError("Invalid service registry response: missing body"))
 				})
@@ -148,26 +131,28 @@ var _ = Describe("Service Registry Info", func() {
 				})
 
 				It("should return a suitable error", func() {
-					_, err := eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(HavePrefix("Invalid service registry response JSON: "))
 				})
 			})
 
 			Context("and the response is valid", func() {
-				var (
-					output string
-					err    error
-				)
-
 				BeforeEach(func() {
 					resp := &http.Response{}
 					resp.Body = ioutil.NopCloser(strings.NewReader(`{"nodeCount":"1","peers":[{"uri":"uri1","issuer":"issuer1","skipSslValidation":true},{"uri":"uri2","issuer":"issuer2","skipSslValidation":false}]}`))
 					fakeClient.DoReturns(resp, nil)
 				})
 
-				JustBeforeEach(func() {
-					output, err = eureka.Info(fakeCliConnection, fakeClient, "some-service-registry")
+				It("should have sent a request to the correct URL", func() {
+					Expect(fakeClient.DoCallCount()).To(Equal(1))
+					req := fakeClient.DoArgsForCall(0)
+					Expect(req.URL.String()).To(Equal("https://eureka-some-guid.some.host.name/info"))
+				})
+
+				It("should have sent a request with the correct accept header", func() {
+					Expect(fakeClient.DoCallCount()).To(Equal(1))
+					req := fakeClient.DoArgsForCall(0)
+					Expect(req.Header.Get("Accept")).To(Equal("application/json"))
 				})
 
 				It("should not return an error", func() {
