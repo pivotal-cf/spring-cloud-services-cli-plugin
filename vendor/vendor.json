@@ -57,12 +57,6 @@
 			"revisionTime": "2015-10-23T02:49:00Z"
 		},
 		{
-			"checksumSHA1": "RpAfFqbrqQ5nCMfRYa4hjp8Mj/0=",
-			"path": "github.com/maxbrunsfeld/counterfeiter",
-			"revision": "c2f4a41282ca1e8652d0b534450f021380b1bf39",
-			"revisionTime": "2016-08-10T16:49:03Z"
-		},
-		{
 			"checksumSHA1": "5CYrIFTTUD3pONFo8uEO21Ajz68=",
 			"path": "github.com/onsi/ginkgo",
 			"revision": "00054c0bb96fc880d4e0be1b90937fad438c5290",

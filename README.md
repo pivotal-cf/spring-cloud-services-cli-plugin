@@ -60,8 +60,7 @@ directory.
 
 To run tests using Ginkgo, install the executable as follows:
 ```bash
-$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ go install github.com/onsi/ginkgo/ginkgo
+$ go get github.com/onsi/ginkgo/ginkgo
 ```
 and then change directory to a specific package and
 run Ginkgo from there. For example:
@@ -90,11 +89,9 @@ $ govendor fmt +local
 
 ### Mocking
 
-Test mocks are created using [Counterfeiter](https://github.com/maxbrunsfeld/counterfeiter), which is included in the `/vendor`
-directory. Install the `counterfeiter` executable as follows:
+Test mocks are created using [Counterfeiter](https://github.com/maxbrunsfeld/counterfeiter). Install the `counterfeiter` executable as follows:
 ```bash
-$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ go install github.com/maxbrunsfeld/counterfeiter
+$ go get github.com/maxbrunsfeld/counterfeiter
 ```
 
 Interfaces to be mocked are tagged `//go:generate counterfeiter ...` and so mocks may
