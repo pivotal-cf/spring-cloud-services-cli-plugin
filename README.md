@@ -27,6 +27,11 @@ existing ones. Install Govendor as follows:
     ```bash
     $ go get -u github.com/kardianos/govendor
     ```
+7. Ensure protobuf's are installed and that `protoc` is in your path. On mac you can install this with homebrew:
+
+    ```bash
+    $ brew install protobuf
+    ```
 
 ## Building
 
