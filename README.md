@@ -65,13 +65,12 @@ directory.
 
 To run tests using Ginkgo, install the executable as follows:
 ```bash
-$ go get github.com/onsi/ginkgo/ginkgo
+$ go get -u github.com/onsi/ginkgo/ginkgo
 ```
-and then change directory to a specific package and
-run Ginkgo from there. For example:
+and run the tests as follows:
 ```bash
-$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka
-$ ginkgo -cover -race
+$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
+$ ginkgo -r -cover -race
 ```
 
 ## Developing

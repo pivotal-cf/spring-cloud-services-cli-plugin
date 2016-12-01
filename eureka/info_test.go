@@ -99,17 +99,6 @@ var _ = Describe("Service Registry Info", func() {
 			})
 		})
 
-		Context("but eureka cannot be contacted because of a SSL validation failure", func() {
-			BeforeEach(func() {
-				fakeClient.DoReturns(nil, errors.New("... unknown authority ..."))
-			})
-
-			It("should return a hint", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("Hint:"))
-			})
-		})
-
 		Context("and eureka responds", func() {
 			Context("but the response body is missing", func() {
 				BeforeEach(func() {
