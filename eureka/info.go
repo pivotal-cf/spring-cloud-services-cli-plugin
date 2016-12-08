@@ -44,9 +44,6 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 
 	resp, err := client.Do(req)
 	if err != nil {
-		if strings.Contains(err.Error(), "unknown authority") {
-			return "", fmt.Errorf("Service registry unavailable: %s\nHint: try --skip-ssl-validation at your own risk.", err)
-		}
 		return "", fmt.Errorf("Service registry unavailable: %s", err)
 	}
 
@@ -63,7 +60,11 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 		return "", fmt.Errorf("Invalid service registry response JSON: %s", err)
 	}
 
-	return fmt.Sprintf("Service instance: %s\nServer URL: %s\nHigh availability count: %s\nPeers: %s\n", srInstanceName, eureka, infoResp.NodeCount, strings.Join(peersToString(infoResp.Peers), ", ")), nil
+	return fmt.Sprintf(`Service instance: %s
+Server URL: %s
+High availability count: %s
+Peers: %s
+`, srInstanceName, eureka, infoResp.NodeCount, strings.Join(peersToStrings(infoResp.Peers), ", ")), nil
 }
 
 func eurekaFromDashboard(dashboardUrl string) (string, error) {
@@ -89,7 +90,7 @@ func eurekaFromDashboard(dashboardUrl string) (string, error) {
 	return url.String(), nil
 }
 
-func peersToString(peers []Peer) []string {
+func peersToStrings(peers []Peer) []string {
 	p := []string{}
 	for _, peer := range peers {
 		p = append(p, peer.Uri)
