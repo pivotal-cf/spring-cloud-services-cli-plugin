@@ -18,9 +18,9 @@ var _ = Describe("Service Registry List", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeClient        *httpclientfakes.FakeClient
-		getServiceModel   plugin_models.GetService_Model
-		output            string
-		err               error
+		getServiceModel plugin_models.GetService_Model
+		output string
+		err error
 	)
 
 	BeforeEach(func() {
@@ -168,7 +168,9 @@ var _ = Describe("Service Registry List", func() {
                   "app":"APP-1",
                   "status":"UP",
                   "metadata":{
-                     "zone":"zone1"
+                     "zone":"zone1",
+                     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+                     "cfInstanceIndex":"2"
                   }
                }
             ]
@@ -179,7 +181,9 @@ var _ = Describe("Service Registry List", func() {
                   "app":"APP-2",
                   "status":"OUT_OF_SERVICE",
                   "metadata":{
-                     "zone":"zone2"
+                     "zone":"zone2",
+                     "cfAppGuid":"162bd505-1b19-14ca-1451-1a9329321431",
+                     "cfInstanceIndex":"3"
                   }
                }
             ]
@@ -190,46 +194,160 @@ var _ = Describe("Service Registry List", func() {
 						fakeClient.DoReturns(resp, nil)
 					})
 
-					It("should have obtained an access token", func() {
-						Expect(accessTokenCallCount).To(Equal(1))
+					Context("but the cf app name cannot be determined", func() {
+						Context("because the cf app GUID is not present in the registered metadata", func() {
+							BeforeEach(func() {
+								resp := &http.Response{}
+								resp.Body = ioutil.NopCloser(strings.NewReader(`
+{
+   "applications":{
+      "application":[
+         {
+            "instance":[
+               {
+                  "app":"APP-1",
+                  "status":"UP",
+                  "metadata":{
+                     "zone":"zone1"
+                  }
+               }
+            ]
+         }
+      ]
+   }
+}`))
+								fakeClient.DoReturns(resp, nil)
+							})
+
+							It("should not return an error", func() {
+								Expect(err).NotTo(HaveOccurred())
+							})
+
+							It("should omit the cf app name and cf instance index", func() {
+								tab := &format.Table{}
+								tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
+								tab.AddRow([]string{"APP-1", "?????", "?", "zone1", "UP"})
+								Expect(output).To(ContainSubstring(tab.String()))
+							})
+						})
+
+						Context("because curl returns an error", func() {
+							BeforeEach(func() {
+								fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{}, errors.New("some error"))
+							})
+
+							It("should return a suitable error", func() {
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': some error"))
+							})
+						})
+
+						Context("because curl returns a failure payload", func() {
+							BeforeEach(func() {
+								fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{`{`, `"code": 100004,`, `"description": "The app could not be found: 062bd505-8b19-44ca-4451-4a932932143a",`, `"error_code": "CF-AppNotFound"`, `}`}, nil)
+							})
+
+							It("should return a suitable error", func() {
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': The app could not be found: 062bd505-8b19-44ca-4451-4a932932143a: code 100004, error_code CF-AppNotFound"))
+							})
+						})
+
+						Context("because curl returns unsuitable JSON", func() {
+							BeforeEach(func() {
+								fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{`{`, `"name": 99`, `}`}, nil)
+							})
+
+							It("should return a suitable error", func() {
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': json: cannot unmarshal number into Go value of type string"))
+							})
+						})
 					})
 
-					It("should have sent a request to the correct URL", func() {
-						Expect(fakeClient.DoCallCount()).To(Equal(1))
-						req := fakeClient.DoArgsForCall(0)
-						Expect(req.URL.String()).To(Equal("https://eureka-some-guid.some.host.name/eureka/apps"))
-					})
+					Context("and the cf app name can be determined", func() {
 
-					It("should have sent a request with the correct accept header", func() {
-						Expect(fakeClient.DoCallCount()).To(Equal(1))
-						req := fakeClient.DoArgsForCall(0)
-						Expect(req.Header.Get("Accept")).To(Equal("application/json"))
-					})
+						var (
+							cliCommandWithoutTerminalOutputCallCount int
+							cliCommandArgs [][]string
+						)
 
-					It("should have sent a request with the correct authorization header", func() {
-						Expect(fakeClient.DoCallCount()).To(Equal(1))
-						req := fakeClient.DoArgsForCall(0)
-						Expect(req.Header.Get("Authorization")).To(Equal("bearer someaccesstoken"))
-					})
+						BeforeEach(func() {
+							cliCommandWithoutTerminalOutputCallCount = 0
+							cliCommandArgs = [][]string{}
+							fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+								cliCommandWithoutTerminalOutputCallCount++
+								cliCommandArgs = append(cliCommandArgs, args)
+								var cfAppName string
+								if strings.Contains(args[1], "062bd505-8b19-44ca-4451-4a932932143a") {
+									cfAppName = "cfapp1"
+								} else {
+									cfAppName = "cfapp2"
+								}
+								return []string{`{`, `"name": "` + cfAppName + `"`, `}`}, nil
+							}
+						})
 
-					It("should not return an error", func() {
-						Expect(err).NotTo(HaveOccurred())
-					})
+						It("should have obtained an access token", func() {
+							Expect(accessTokenCallCount).To(Equal(1))
+						})
 
-					It("should return the service instance name", func() {
-						Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
-					})
+						It("should have sent a request to the correct URL", func() {
+							Expect(fakeClient.DoCallCount()).To(Equal(1))
+							req := fakeClient.DoArgsForCall(0)
+							Expect(req.URL.String()).To(Equal("https://eureka-some-guid.some.host.name/eureka/apps"))
+						})
 
-					It("should return the eureka server URL", func() {
-						Expect(output).To(ContainSubstring("Server URL: https://eureka-some-guid.some.host.name/\n"))
-					})
+						It("should have sent a request with the correct accept header", func() {
+							Expect(fakeClient.DoCallCount()).To(Equal(1))
+							req := fakeClient.DoArgsForCall(0)
+							Expect(req.Header.Get("Accept")).To(Equal("application/json"))
+						})
 
-					It("should return the registered applications", func() {
-						tab := &format.Table{}
-						tab.Entitle([]string{"eureka app name", "zone", "status"})
-						tab.AddRow([]string{"APP-1", "zone1", "UP"})
-						tab.AddRow([]string{"APP-2", "zone2", "OUT_OF_SERVICE"})
-						Expect(output).To(ContainSubstring(tab.String()))
+						It("should have sent a request with the correct authorization header", func() {
+							Expect(fakeClient.DoCallCount()).To(Equal(1))
+							req := fakeClient.DoArgsForCall(0)
+							Expect(req.Header.Get("Authorization")).To(Equal("bearer someaccesstoken"))
+						})
+
+						It("should have looked up the cf app names", func() {
+							Expect(cliCommandWithoutTerminalOutputCallCount).To(Equal(2))
+							Expect(len(cliCommandArgs)).To(Equal(2))
+
+							argsForApp1 := cliCommandArgs[0]
+							Expect(len(argsForApp1)).To(Equal(4))
+							Expect(argsForApp1[0]).To(Equal("curl"))
+							Expect(argsForApp1[1]).To(Equal("/v2/apps/062bd505-8b19-44ca-4451-4a932932143a/summary"))
+							Expect(argsForApp1[2]).To(Equal("-H"))
+							Expect(argsForApp1[3]).To(Equal("Accept: application/json"))
+
+							argsForApp2 := cliCommandArgs[1]
+							Expect(len(argsForApp2)).To(Equal(4))
+							Expect(argsForApp2[0]).To(Equal("curl"))
+							Expect(argsForApp2[1]).To(Equal("/v2/apps/162bd505-1b19-14ca-1451-1a9329321431/summary"))
+							Expect(argsForApp2[2]).To(Equal("-H"))
+							Expect(argsForApp2[3]).To(Equal("Accept: application/json"))
+						})
+
+						It("should not return an error", func() {
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("should return the service instance name", func() {
+							Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
+						})
+
+						It("should return the eureka server URL", func() {
+							Expect(output).To(ContainSubstring("Server URL: https://eureka-some-guid.some.host.name/\n"))
+						})
+
+						It("should return the registered applications", func() {
+							tab := &format.Table{}
+							tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
+							tab.AddRow([]string{"APP-1", "cfapp1", "2", "zone1", "UP"})
+							tab.AddRow([]string{"APP-2", "cfapp2", "3", "zone2", "OUT_OF_SERVICE"})
+							Expect(output).To(ContainSubstring(tab.String()))
+						})
 					})
 				})
 			})
