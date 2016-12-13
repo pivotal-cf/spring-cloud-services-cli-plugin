@@ -83,7 +83,11 @@ func List(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 
 	tab := &format.Table{}
 	tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
-	for _, app := range listResp.Applications.Application {
+	apps := listResp.Applications.Application
+	if len(apps) == 0 {
+		return fmt.Sprintf("Service instance: %s\nServer URL: %s\n\nNo registered applications found\n", srInstanceName, eureka), nil
+	}
+	for _, app := range apps {
 		instances := app.Instance
 		for _, instance := range instances {
 			metadata := instance.Metadata

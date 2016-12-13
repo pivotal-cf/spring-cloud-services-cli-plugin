@@ -196,6 +196,28 @@ var _ = Describe("Service Registry List", func() {
 						fakeClient.DoReturns(resp, nil)
 					})
 
+					Context("but no applications are registered", func() {
+						BeforeEach(func() {
+							resp := &http.Response{}
+							resp.Body = ioutil.NopCloser(strings.NewReader(`
+{
+   "applications":{
+       "application":[]
+   }
+}`))
+							fakeClient.DoReturns(resp, nil)
+						})
+
+						It("should not return an error", func() {
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("should print a suitable message", func() {
+							Expect(output).To(ContainSubstring("No registered applications found"))
+						})
+
+					})
+
 					Context("but the cf app name cannot be determined", func() {
 						Context("because the cf app GUID is not present in the registered metadata", func() {
 							BeforeEach(func() {
