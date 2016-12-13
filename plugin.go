@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
-
-	"code.cloudfoundry.org/cli/plugin"
 	"crypto/tls"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
+
+	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 )
 
 // Plugin is a struct implementing the Plugin interface, defined by the core CLI, which can

@@ -2,24 +2,25 @@ package eureka
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/cli/plugin"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"net/http"
 	"strings"
+
+	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
 type Instance struct {
 	App      string
 	Status   string
 	Metadata struct {
-			 CfAppGuid       string
-			 CfInstanceIndex string
-			 Zone            string
-		 }
+		CfAppGuid       string
+		CfInstanceIndex string
+		Zone            string
+	}
 }
 
 type ApplicationInstance struct {
@@ -28,12 +29,12 @@ type ApplicationInstance struct {
 
 type ListResp struct {
 	Applications struct {
-			     Application []ApplicationInstance
-		     }
+		Application []ApplicationInstance
+	}
 }
 
 const (
-	UnknownCfAppName = "?????"
+	UnknownCfAppName       = "?????"
 	UnknownCfInstanceIndex = "?"
 )
 
@@ -54,7 +55,7 @@ func List(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 		return "", fmt.Errorf("Access token not available: %s", err)
 	}
 
-	req, err := http.NewRequest("GET", eureka + "eureka/apps", nil)
+	req, err := http.NewRequest("GET", eureka+"eureka/apps", nil)
 	if err != nil {
 		// Should never get here
 		return "", fmt.Errorf("Unexpected error: %s", err)

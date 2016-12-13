@@ -2,6 +2,7 @@ package format_test
 
 import (
 	"fmt"
+
 	"github.com/fatih/color"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -2,14 +2,15 @@ package eureka
 
 import (
 	"bytes"
-	"code.cloudfoundry.org/cli/plugin"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
 type Peer struct {

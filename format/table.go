@@ -2,8 +2,9 @@ package format
 
 import (
 	"fmt"
-	"github.com/fatih/color"
 	"strings"
+
+	"github.com/fatih/color"
 )
 
 type Table struct {

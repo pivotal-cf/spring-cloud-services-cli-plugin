@@ -1,26 +1,27 @@
 package eureka_test
 
 import (
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
-	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 var _ = Describe("Service Registry List", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeClient        *httpclientfakes.FakeClient
-		getServiceModel plugin_models.GetService_Model
-		output string
-		err error
+		getServiceModel   plugin_models.GetService_Model
+		output            string
+		err               error
 	)
 
 	BeforeEach(func() {
@@ -269,7 +270,7 @@ var _ = Describe("Service Registry List", func() {
 
 						var (
 							cliCommandWithoutTerminalOutputCallCount int
-							cliCommandArgs [][]string
+							cliCommandArgs                           [][]string
 						)
 
 						BeforeEach(func() {

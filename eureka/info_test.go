@@ -1,16 +1,17 @@
 package eureka_test
 
 import (
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"strings"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
-	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 var _ = Describe("Service Registry Info", func() {
