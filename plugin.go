@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 )
 
 // Plugin is a struct implementing the Plugin interface, defined by the core CLI, which can
@@ -28,18 +28,16 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	switch args[0] {
 
 	case "service-registry-info":
-		info, err := eureka.Info(cliConnection, client, getServiceRegistryInstanceName(otherArgs, "service-registry-info"))
-		if err != nil {
-			diagnose(err.Error())
-		}
-		fmt.Printf(info)
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.Info(cliConnection, client, serviceRegistryInstanceName)
+		})
 
 	case "service-registry-list":
-		list, err := eureka.List(cliConnection, client, getServiceRegistryInstanceName(otherArgs, "service-registry-info"))
-		if err != nil {
-			diagnose(err.Error())
-		}
-		fmt.Printf(list)
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.List(cliConnection, client, serviceRegistryInstanceName)
+		})
 
 	default:
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
@@ -55,14 +53,10 @@ func getServiceRegistryInstanceName(args []string, operation string) string {
 
 }
 
-func diagnose(message string) {
-	hint := ""
-	if strings.Contains(message, "unknown authority") {
-		hint = "Hint: try --skip-ssl-validation at your own risk.\n"
-	}
-
-	fmt.Printf("%s\n%s", message, hint)
-	os.Exit(1)
+func runAction(cliConnection plugin.CliConnection, message string, action func() (string, error)) {
+	format.RunAction(cliConnection, message, action, os.Stdout, func() {
+		os.Exit(1)
+	})
 }
 
 func diagnoseWithHelp(message string, operation string) {
