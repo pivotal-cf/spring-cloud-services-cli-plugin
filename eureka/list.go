@@ -78,7 +78,7 @@ func List(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 	var listResp ListResp
 	err = json.Unmarshal(buf.Bytes(), &listResp)
 	if err != nil {
-		return "", fmt.Errorf("Invalid service registry response JSON: %s", err)
+		return "", fmt.Errorf("Invalid service registry response JSON: %s\nResponse body: %s", err, string(buf.Bytes()))
 	}
 
 	tab := &format.Table{}
