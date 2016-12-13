@@ -9,14 +9,12 @@ For information on plugin development, see
 ## Go Development
 
 See the Spring Cloud Services
-[Go Development](https://github.com/pivotal-cf/spring-cloud-services-getting-started/blob/master/docs/go.adoc).
-guide.
-
-Development of this plugin began with Go 1.7.x.
+[Go Development](https://github.com/pivotal-cf/spring-cloud-services-getting-started/blob/master/docs/go.adoc) guide.
+(If you just want to build and install the plugin, simply install go and govendor.)
 
 ## Building
 
-To build the plugin, issue:
+To build the plugin, install go and govendor (as described above) and issue:
 ```bash
 $ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
 $ govendor install +local
