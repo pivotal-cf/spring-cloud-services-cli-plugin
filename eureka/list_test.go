@@ -146,13 +146,14 @@ var _ = Describe("Service Registry List", func() {
 				Context("but the response body contains invalid JSON", func() {
 					BeforeEach(func() {
 						resp := &http.Response{}
-						resp.Body = ioutil.NopCloser(strings.NewReader(`{`))
+						resp.Body = ioutil.NopCloser(strings.NewReader(`{invalid`))
 						fakeClient.DoReturns(resp, nil)
 					})
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
 						Expect(err.Error()).To(HavePrefix("Invalid service registry response JSON: "))
+						Expect(err.Error()).To(ContainSubstring("Response body: {invalid"))
 					})
 				})
 
