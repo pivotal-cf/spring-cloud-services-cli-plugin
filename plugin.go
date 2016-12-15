@@ -9,6 +9,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
 // Plugin is a struct implementing the Plugin interface, defined by the core CLI, which can
@@ -24,19 +25,20 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSslValidation},
 	}
 	client := &http.Client{Transport: tr}
+	authClient := httpclient.NewAuthenticatedClient(client)
 
 	switch args[0] {
 
 	case "service-registry-info":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.Info(cliConnection, client, serviceRegistryInstanceName)
+			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)
 		})
 
 	case "service-registry-list":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.List(cliConnection, client, serviceRegistryInstanceName)
+			return eureka.List(cliConnection, serviceRegistryInstanceName, authClient)
 		})
 
 	default:

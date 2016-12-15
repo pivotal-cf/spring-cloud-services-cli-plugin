@@ -1,11 +1,8 @@
 package eureka
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
@@ -38,47 +35,35 @@ const (
 	UnknownCfInstanceIndex = "?"
 )
 
-func List(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string) (string, error) {
+func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
+	return ListWithResolver(cliConnection, srInstanceName, authClient, EurekaUrlFromDashboardUrl)
+}
+
+func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient,
+	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("Service registry instance not found: %s", err)
 	}
-
-	dashboardUrl := serviceModel.DashboardUrl
-	eureka, err := eurekaFromDashboard(dashboardUrl)
-	if err != nil {
-		return "", fmt.Errorf("Invalid service registry dashboard URL: %s", err)
-	}
-
 	accessToken, err := cliConnection.AccessToken()
 	if err != nil {
 		return "", fmt.Errorf("Access token not available: %s", err)
 	}
 
-	req, err := http.NewRequest("GET", eureka+"eureka/apps", nil)
+	eureka, err := eurekaUrlFromDashboardUrl(serviceModel.DashboardUrl, accessToken, authClient)
 	if err != nil {
-		// Should never get here
-		return "", fmt.Errorf("Unexpected error: %s", err)
-	}
-	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", accessToken)
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("Service registry unavailable: %s", err)
+		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
 	}
 
-	buf := new(bytes.Buffer)
-	body := resp.Body
-	if body == nil {
-		return "", errors.New("Invalid service registry response: missing body")
+	buf, err := authClient.DoAuthenticatedGet(eureka+"eureka/apps", accessToken)
+	if err != nil {
+		return "", fmt.Errorf("Service registry error: %s", err)
 	}
-	buf.ReadFrom(resp.Body)
 
 	var listResp ListResp
 	err = json.Unmarshal(buf.Bytes(), &listResp)
 	if err != nil {
-		return "", fmt.Errorf("Invalid service registry response JSON: %s\nResponse body: %s", err, string(buf.Bytes()))
+		return "", fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(buf.Bytes()))
 	}
 
 	tab := &format.Table{}

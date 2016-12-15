@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
@@ -24,16 +23,24 @@ type InfoResp struct {
 	Peers     []Peer
 }
 
-func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string) (string, error) {
+func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
+	return InfoWithResolver(cliConnection, client, srInstanceName, authClient, EurekaUrlFromDashboardUrl)
+}
+
+func InfoWithResolver(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient,
+	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("Service registry instance not found: %s", err)
 	}
-
-	dashboardUrl := serviceModel.DashboardUrl
-	eureka, err := eurekaFromDashboard(dashboardUrl)
+	accessToken, err := cliConnection.AccessToken()
 	if err != nil {
-		return "", fmt.Errorf("Invalid service registry dashboard URL: %s", err)
+		return "", fmt.Errorf("Access token not available: %s", err)
+	}
+	dashboardUrl := serviceModel.DashboardUrl
+	eureka, err := eurekaUrlFromDashboardUrl(dashboardUrl, accessToken, authClient)
+	if err != nil {
+		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
 	}
 
 	req, err := http.NewRequest("GET", eureka+"info", nil)
@@ -45,7 +52,7 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("Service registry unavailable: %s", err)
+		return "", fmt.Errorf("Service registry error: %s", err)
 	}
 
 	buf := new(bytes.Buffer)
@@ -68,27 +75,10 @@ Peers: %s
 `, srInstanceName, eureka, infoResp.NodeCount, strings.Join(peersToStrings(infoResp.Peers), ", ")), nil
 }
 
-func eurekaFromDashboard(dashboardUrl string) (string, error) {
-	url, err := url.Parse(dashboardUrl)
-	if err != nil {
-		return "", err
+type ServiceDefinitionResp struct {
+	Credentials struct {
+		Uri string
 	}
-	hostname, path := url.Host, url.Path
-
-	labels := strings.Split(hostname, ".")
-	if len(labels) < 2 {
-		return "", fmt.Errorf("hostname of %s has less than two labels", dashboardUrl)
-	}
-
-	segments := strings.Split(path, "/")
-	if len(segments) == 0 || (len(segments) == 1 && segments[0] == "") {
-		return "", fmt.Errorf("path of %s has no segments", dashboardUrl)
-	}
-	guid := segments[len(segments)-1]
-
-	url.Host = "eureka-" + guid + "." + strings.Join(labels[1:], ".")
-	url.Path = "/"
-	return url.String(), nil
 }
 
 func peersToStrings(peers []Peer) []string {
