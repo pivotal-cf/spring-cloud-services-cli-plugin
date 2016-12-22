@@ -11,8 +11,9 @@ import (
 )
 
 type Instance struct {
-	App      string
-	Status   string
+	App        string
+	InstanceId string
+	Status     string
 	Metadata struct {
 		CfAppGuid       string
 		CfInstanceIndex string
@@ -40,7 +41,7 @@ func List(cliConnection plugin.CliConnection, srInstanceName string, authClient 
 }
 
 func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient,
-	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("Service registry instance not found: %s", err)
@@ -55,7 +56,7 @@ func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string,
 		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
 	}
 
-	buf, err := authClient.DoAuthenticatedGet(eureka+"eureka/apps", accessToken)
+	buf, err := authClient.DoAuthenticatedGet(eureka + "eureka/apps", accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Service registry error: %s", err)
 	}
@@ -108,21 +109,23 @@ type SummaryFailure struct {
 func cfAppName(cliConnection plugin.CliConnection, cfAppGuid string) (string, error) {
 	output, err := cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v2/apps/%s/summary", cfAppGuid), "-H", "Accept: application/json")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error in CLI Command: %s\n", err)
 	}
 
 	// Cope with some errors coming back with err == nil.
 	// See https://www.pivotaltracker.com/story/show/130060949 for a potential alternative.
 	err = diagnoseCurlError(output)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error found diagnosing CURL: %s\n", err)
 	}
 
 	var summaryResp SummaryResp
+	fmt.Printf("Json Body: %s", strings.Join(output, "\n"))
 	err = json.Unmarshal([]byte(strings.Join(output, "\n")), &summaryResp)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("Error deserialising JSON: %s", err)
 	}
+	fmt.Printf("Summary response: %s\n", summaryResp)
 
 	return summaryResp.Name, err
 }

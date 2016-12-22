@@ -29,7 +29,14 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	switch args[0] {
 
-	case "service-registry-info":
+	case "service-registry-deregister":
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
+		cfApplicationName := getCfApplicationName(otherArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Deleting application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient)
+		})
+
+case "service-registry-info":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
 			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)
@@ -45,6 +52,13 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
 
 	}
+}
+
+func getCfApplicationName(args []string, operation string) string {
+	if len(args) < 3 || args[2] == "" {
+		diagnoseWithHelp("cf application name not specified.", operation)
+	}
+	return args[2]
 }
 
 func getServiceRegistryInstanceName(args []string, operation string) string {
@@ -93,6 +107,15 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 			Build: 0,
 		},
 		Commands: []plugin.Command{
+			{
+				Name:     "service-registry-deregister",
+				HelpText: "Deregister an application registered with a Spring Cloud Services service registry",
+				Alias:    "srd",
+				UsageDetails: plugin.Usage{
+					Usage:   "   cf service-registry-deregister SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
+					Options: map[string]string{"--skip-ssl-validation": skipSslValidationUsage},
+				},
+			},
 			{
 				Name:     "service-registry-info",
 				HelpText: "Display Spring Cloud Services service registry instance information",

@@ -6,8 +6,10 @@ import (
 	"net/http"
 )
 
+//go:generate counterfeiter -o httpclientfakes/fake_authenticated_client.go . AuthenticatedClient
 type AuthenticatedClient interface {
 	DoAuthenticatedGet(url string, accessToken string) (*bytes.Buffer, error)
+	DoAuthenticatedDelete(url string, accessToken string) error
 }
 
 func NewAuthenticatedClient(httpClient Client) *authenticatedClient {
@@ -44,4 +46,23 @@ func (c *authenticatedClient) DoAuthenticatedGet(url string, accessToken string)
 	}
 
 	return buf, nil
+}
+
+func (c *authenticatedClient) DoAuthenticatedDelete(url string, accessToken string) error {
+	req, err := http.NewRequest("DELETE", url, nil)
+	fmt.Printf("Url: %s \n", url)
+	if err != nil {
+		// Should never get here
+		return fmt.Errorf("Request creation error: %s", err)
+	}
+
+	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Authorization", accessToken)
+	resp, err := c.Httpclient.Do(req)
+	fmt.Printf("Url: %s \n Status: %s\n", url, resp.Status)
+	if err != nil {
+		return fmt.Errorf("authenticated delete of '%s' failed: %s", url, err)
+	}
+
+	return nil
 }
