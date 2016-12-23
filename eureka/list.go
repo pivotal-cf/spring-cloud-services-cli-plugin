@@ -14,7 +14,7 @@ type Instance struct {
 	App        string
 	InstanceId string
 	Status     string
-	Metadata struct {
+	Metadata   struct {
 		CfAppGuid       string
 		CfInstanceIndex string
 		Zone            string
@@ -41,7 +41,7 @@ func List(cliConnection plugin.CliConnection, srInstanceName string, authClient 
 }
 
 func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient,
-eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("Service registry instance not found: %s", err)
@@ -56,7 +56,7 @@ eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClie
 		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
 	}
 
-	buf, err := authClient.DoAuthenticatedGet(eureka + "eureka/apps", accessToken)
+	buf, err := authClient.DoAuthenticatedGet(eureka+"eureka/apps", accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Service registry error: %s", err)
 	}
@@ -120,12 +120,10 @@ func cfAppName(cliConnection plugin.CliConnection, cfAppGuid string) (string, er
 	}
 
 	var summaryResp SummaryResp
-	fmt.Printf("Json Body: %s", strings.Join(output, "\n"))
 	err = json.Unmarshal([]byte(strings.Join(output, "\n")), &summaryResp)
 	if err != nil {
 		return "", fmt.Errorf("Error deserialising JSON: %s", err)
 	}
-	fmt.Printf("Summary response: %s\n", summaryResp)
 
 	return summaryResp.Name, err
 }

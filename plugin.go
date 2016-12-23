@@ -36,7 +36,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient)
 		})
 
-case "service-registry-info":
+	case "service-registry-info":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
 			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)

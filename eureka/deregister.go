@@ -1,10 +1,13 @@
 package eureka
 
 import (
+	"encoding/json"
+	"fmt"
+
+	"errors"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
-	"fmt"
-	"encoding/json"
 )
 
 func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
@@ -12,7 +15,7 @@ func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfApp
 }
 
 func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient,
-eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("Service registry instance not found: %s", err)
@@ -21,7 +24,6 @@ eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClie
 	if err != nil {
 		return "", fmt.Errorf("Access token not available: %s", err)
 	}
-
 
 	eureka, err := eurekaUrlFromDashboardUrl(serviceModel.DashboardUrl, accessToken, authClient)
 	if err != nil {
@@ -32,7 +34,6 @@ eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClie
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("App to be deregistered: %s\n", apps)
 
 	for _, app := range apps {
 		err = deregister(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
@@ -46,12 +47,12 @@ func deregister(authClient httpclient.AuthenticatedClient, accessToken string, e
 }
 
 type eurekaAppRecord struct {
-	cfAppName string
+	cfAppName     string
 	eurekaAppName string
-	instanceId string
+	instanceId    string
 }
 
-func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection,authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
+func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
 	registeredAppsWithCfAppName := []eurekaAppRecord{}
 
 	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka)
@@ -60,10 +61,12 @@ func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection,authClien
 	}
 
 	for _, app := range registeredApps {
-		fmt.Printf("cfAppName is: %s \nregistered app struct is: %s\n", cfAppName, app)
 		if app.cfAppName == cfAppName {
 			registeredAppsWithCfAppName = append(registeredAppsWithCfAppName, app)
 		}
+	}
+	if len(registeredAppsWithCfAppName) == 0 {
+		return registeredAppsWithCfAppName, errors.New(fmt.Sprintf("Eureka app name %s cannot be found", cfAppName))
 	}
 
 	return registeredAppsWithCfAppName, nil
@@ -97,18 +100,14 @@ func getRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient
 					return registeredApps, fmt.Errorf("Failed to determine cf app name corresponding to cf app GUID '%s': %s", metadata.CfAppGuid, err)
 				}
 			}
-			fmt.Printf("CF App name is: %s", cfAppNm)
 			registeredApps = append(registeredApps, eurekaAppRecord{
-				cfAppName: cfAppNm,
+				cfAppName:     cfAppNm,
 				eurekaAppName: instance.App,
-				instanceId: instance.InstanceId,
+				instanceId:    instance.InstanceId,
 			})
-			fmt.Printf("Registered apps: %s", registeredApps)
 		}
 		return registeredApps, nil
 	}
 
 	return []eurekaAppRecord{}, nil
 }
-
-

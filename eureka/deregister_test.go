@@ -3,15 +3,16 @@ package eureka_test
 import (
 	//"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 
+	"bytes"
+	"errors"
+
+	"code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
-	"code.cloudfoundry.org/cli/plugin/pluginfakes"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
-	"bytes"
-	"code.cloudfoundry.org/cli/plugin/models"
-	"errors"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
 var _ = FDescribe("Deregister", func() {
@@ -20,9 +21,9 @@ var _ = FDescribe("Deregister", func() {
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
 		fakeResolver      func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		getServiceModel plugin_models.GetService_Model
-		output          string
-		err             error
+		getServiceModel   plugin_models.GetService_Model
+		output            string
+		err               error
 	)
 
 	BeforeEach(func() {
