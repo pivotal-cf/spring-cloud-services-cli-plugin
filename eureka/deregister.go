@@ -48,7 +48,7 @@ func deregister(authClient httpclient.AuthenticatedClient, accessToken string, e
 func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
 	registeredAppsWithCfAppName := []eurekaAppRecord{}
 
-	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka, false)
+	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka)
 
 	if err != nil {
 		return registeredAppsWithCfAppName, err

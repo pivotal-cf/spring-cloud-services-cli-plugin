@@ -189,7 +189,6 @@ var _ = Describe("Deregister", func() {
 				Context("but the eureka instance name cannot be found", func() {
 
 					BeforeEach(func() {
-
 						fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
 							return []string{`{`, `"name": "unknown-cf-app-name"`, `}`}, nil
 						}
