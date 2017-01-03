@@ -15,7 +15,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-var _ = FDescribe("Deregister", func() {
+var _ = Describe("Deregister", func() {
 
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
@@ -97,6 +97,108 @@ var _ = FDescribe("Deregister", func() {
 				It("should return a suitable error", func() {
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError("Error obtaining service registry dashboard URL: resolution error"))
+				})
+			})
+
+			Context("the cf app can be resolved", func() {
+
+				BeforeEach(func() {
+					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+						return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid", nil
+					}
+
+					fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+						return []string{`{`, `"name": "some-cf-app"`, `}`}, nil
+					}
+
+					fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						{
+						   "applications":{
+						      "application":[
+							 {
+							    "instance":[
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"2"
+								  }
+							       }
+							    ]
+							 }
+						      ]
+						   }
+						}`), nil)
+
+				})
+
+				It("should successfully deregister the service", func() {
+					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+				})
+
+				Context("but only two out of three eureka instance names can be resolved", func() {
+
+					BeforeEach(func() {
+
+						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						{
+						   "applications":{
+						      "application":[
+							 {
+							    "instance":[
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"1"
+								  }
+							       },
+							       }							       {
+								  "app":"APP-2",
+								  "status":"UNKNOWN",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfInstanceIndex":"2"
+								  }
+							       },
+							       {
+								  "app":"APP-3",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"162bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"3"
+								  }
+							       },
+							    ]
+							 }
+						      ]
+						   }
+						}`), nil)
+
+						It("should not deregister the service with a missing guid", func() {
+							Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
+						})
+					})
+				})
+
+				Context("but the eureka instance name cannot be found", func() {
+
+					BeforeEach(func() {
+
+						fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
+							return []string{`{`, `"name": "unknown-cf-app-name"`, `}`}, nil
+						}
+					})
+
+					It("should return a suitable error", func() {
+						Expect(err).To(HaveOccurred())
+						Expect(err).To(MatchError("Eureka app name some-cf-app cannot be found"))
+					})
 				})
 			})
 		})

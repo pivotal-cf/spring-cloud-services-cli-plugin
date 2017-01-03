@@ -1,7 +1,6 @@
 package eureka
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"errors"
@@ -46,16 +45,11 @@ func deregister(authClient httpclient.AuthenticatedClient, accessToken string, e
 	return authClient.DoAuthenticatedDelete(eureka+fmt.Sprintf("eureka/apps/%s/%s", eurekaAppName, instanceId), accessToken)
 }
 
-type eurekaAppRecord struct {
-	cfAppName     string
-	eurekaAppName string
-	instanceId    string
-}
-
 func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
 	registeredAppsWithCfAppName := []eurekaAppRecord{}
 
-	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka)
+	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka, false)
+
 	if err != nil {
 		return registeredAppsWithCfAppName, err
 	}
@@ -70,44 +64,4 @@ func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClie
 	}
 
 	return registeredAppsWithCfAppName, nil
-}
-
-func getRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string) ([]eurekaAppRecord, error) {
-	registeredApps := []eurekaAppRecord{}
-	buf, err := authClient.DoAuthenticatedGet(eureka+"eureka/apps", accessToken)
-	if err != nil {
-		return registeredApps, fmt.Errorf("Service registry error: %s", err)
-	}
-
-	var listResp ListResp
-	err = json.Unmarshal(buf.Bytes(), &listResp)
-	if err != nil {
-		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(buf.Bytes()))
-	}
-
-	apps := listResp.Applications.Application
-	for _, app := range apps {
-		instances := app.Instance
-		for _, instance := range instances {
-			metadata := instance.Metadata
-			var cfAppNm string
-			if metadata.CfAppGuid == "" {
-				fmt.Printf("cf app GUID not present in metadata of eureka app %s. Perhaps the app was built with an old version of Spring Cloud Services starters.\n", instance.App)
-				return registeredApps, fmt.Errorf("add details later")
-			} else {
-				cfAppNm, err = cfAppName(cliConnection, metadata.CfAppGuid)
-				if err != nil {
-					return registeredApps, fmt.Errorf("Failed to determine cf app name corresponding to cf app GUID '%s': %s", metadata.CfAppGuid, err)
-				}
-			}
-			registeredApps = append(registeredApps, eurekaAppRecord{
-				cfAppName:     cfAppNm,
-				eurekaAppName: instance.App,
-				instanceId:    instance.InstanceId,
-			})
-		}
-		return registeredApps, nil
-	}
-
-	return []eurekaAppRecord{}, nil
 }
