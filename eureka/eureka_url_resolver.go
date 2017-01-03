@@ -35,9 +35,12 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 	}
 
 	err = json.Unmarshal(buffer.Bytes(), &serviceDefinitionResp)
-	if err != nil /*TODO: valid JSON with wrong content serviceDefinitionResp.Credentials.Uri != "" */ {
+	if serviceDefinitionResp.Credentials.Uri == "" {
 		return "", fmt.Errorf("Invalid service registry definition response JSON: %s, response body: '%s'", err, string(buffer.Bytes()))
-	}
 
+	}
+	if err != nil {
+		return "", fmt.Errorf("JSON reponse contained empty property 'credentials.url': %s", string(buffer.Bytes()))
+	}
 	return serviceDefinitionResp.Credentials.Uri + "/", nil
 }
