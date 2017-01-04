@@ -19,6 +19,15 @@ type FakeAuthenticatedClient struct {
 		result1 *bytes.Buffer
 		result2 error
 	}
+	DoAuthenticatedDeleteStub        func(url string, accessToken string) error
+	doAuthenticatedDeleteMutex       sync.RWMutex
+	doAuthenticatedDeleteArgsForCall []struct {
+		url         string
+		accessToken string
+	}
+	doAuthenticatedDeleteReturns struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -58,11 +67,47 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedGetReturns(result1 *bytes.Bu
 	}{result1, result2}
 }
 
+func (fake *FakeAuthenticatedClient) DoAuthenticatedDelete(url string, accessToken string) error {
+	fake.doAuthenticatedDeleteMutex.Lock()
+	fake.doAuthenticatedDeleteArgsForCall = append(fake.doAuthenticatedDeleteArgsForCall, struct {
+		url         string
+		accessToken string
+	}{url, accessToken})
+	fake.recordInvocation("DoAuthenticatedDelete", []interface{}{url, accessToken})
+	fake.doAuthenticatedDeleteMutex.Unlock()
+	if fake.DoAuthenticatedDeleteStub != nil {
+		return fake.DoAuthenticatedDeleteStub(url, accessToken)
+	} else {
+		return fake.doAuthenticatedDeleteReturns.result1
+	}
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedDeleteCallCount() int {
+	fake.doAuthenticatedDeleteMutex.RLock()
+	defer fake.doAuthenticatedDeleteMutex.RUnlock()
+	return len(fake.doAuthenticatedDeleteArgsForCall)
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedDeleteArgsForCall(i int) (string, string) {
+	fake.doAuthenticatedDeleteMutex.RLock()
+	defer fake.doAuthenticatedDeleteMutex.RUnlock()
+	return fake.doAuthenticatedDeleteArgsForCall[i].url, fake.doAuthenticatedDeleteArgsForCall[i].accessToken
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedDeleteReturns(result1 error) {
+	fake.DoAuthenticatedDeleteStub = nil
+	fake.doAuthenticatedDeleteReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeAuthenticatedClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.doAuthenticatedGetMutex.RLock()
 	defer fake.doAuthenticatedGetMutex.RUnlock()
+	fake.doAuthenticatedDeleteMutex.RLock()
+	defer fake.doAuthenticatedDeleteMutex.RUnlock()
 	return fake.invocations
 }
 
