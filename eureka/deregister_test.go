@@ -186,17 +186,17 @@ var _ = Describe("Deregister", func() {
 					})
 				})
 
-				Context("but the eureka instance name cannot be found", func() {
+				Context("but the cf app name cannot be found", func() {
 
 					BeforeEach(func() {
 						fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-							return []string{`{`, `"name": "unknown-cf-app-name"`, `}`}, nil
+							return []string{`{}`}, nil
 						}
 					})
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("Eureka app name some-cf-app cannot be found"))
+						Expect(err).To(MatchError("cf app name some-cf-app not found"))
 					})
 				})
 			})

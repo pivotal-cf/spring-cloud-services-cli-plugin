@@ -60,7 +60,7 @@ func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClie
 		}
 	}
 	if len(registeredAppsWithCfAppName) == 0 {
-		return registeredAppsWithCfAppName, errors.New(fmt.Sprintf("Eureka app name %s cannot be found", cfAppName))
+		return registeredAppsWithCfAppName, errors.New(fmt.Sprintf("cf app name %s not found", cfAppName))
 	}
 
 	return registeredAppsWithCfAppName, nil
