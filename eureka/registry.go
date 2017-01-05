@@ -3,7 +3,8 @@ package eureka
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
+
+	"errors"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
@@ -83,32 +84,16 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 }
 
 func cfAppName(cliConnection plugin.CliConnection, cfAppGuid string) (string, error) {
-	output, err := cliConnection.CliCommandWithoutTerminalOutput("curl", fmt.Sprintf("/v2/apps/%s/summary", cfAppGuid), "-H", "Accept: application/json")
+	var err error
+	cliCmdAppsOutput, err := cliConnection.GetApps()
 	if err != nil {
 		return "", err
 	}
-
-	// Cope with some errors coming back with err == nil.
-	// See https://www.pivotaltracker.com/story/show/130060949 for a potential alternative.
-	err = diagnoseCurlError(output)
-	if err != nil {
-		return "", err
+	for _, app := range cliCmdAppsOutput {
+		if app.Guid == cfAppGuid {
+			return app.Name, nil
+		}
 	}
 
-	var summaryResp SummaryResp
-	err = json.Unmarshal([]byte(strings.Join(output, "\n")), &summaryResp)
-	if err != nil {
-		return "", err
-	}
-
-	return summaryResp.Name, err
-}
-
-func diagnoseCurlError(output []string) error {
-	var summaryFailure SummaryFailure
-	err := json.Unmarshal([]byte(strings.Join(output, "\n")), &summaryFailure)
-	if err == nil && summaryFailure.Code != 0 {
-		return fmt.Errorf("%s: code %d, error_code %s", summaryFailure.Description, summaryFailure.Code, summaryFailure.Error_code)
-	}
-	return nil
+	return "", errors.New("CF App not found")
 }

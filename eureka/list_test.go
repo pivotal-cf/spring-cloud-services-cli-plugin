@@ -2,7 +2,6 @@ package eureka_test
 
 import (
 	"errors"
-	"strings"
 
 	"bytes"
 
@@ -216,9 +215,9 @@ var _ = Describe("Service Registry List", func() {
 								})
 							})
 
-							Context("because curl returns an error", func() {
+							Context("because GetApps returns an error", func() {
 								BeforeEach(func() {
-									fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{}, errors.New("some error"))
+									fakeCliConnection.GetAppsReturns([]plugin_models.GetAppsModel{}, errors.New("some error"))
 								})
 
 								It("should return a suitable error", func() {
@@ -227,49 +226,28 @@ var _ = Describe("Service Registry List", func() {
 								})
 							})
 
-							Context("because curl returns a failure payload", func() {
-								BeforeEach(func() {
-									fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{`{`, `"code": 100004,`, `"description": "The app could not be found: 062bd505-8b19-44ca-4451-4a932932143a",`, `"error_code": "CF-AppNotFound"`, `}`}, nil)
-								})
-
-								It("should return a suitable error", func() {
-									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': The app could not be found: 062bd505-8b19-44ca-4451-4a932932143a: code 100004, error_code CF-AppNotFound"))
-								})
-							})
-
-							Context("because curl returns unsuitable JSON", func() {
-								BeforeEach(func() {
-									fakeCliConnection.CliCommandWithoutTerminalOutputReturns([]string{`{`, `"name": 99`, `}`}, nil)
-								})
-
-								It("should return a suitable error", func() {
-									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': json: cannot unmarshal number into Go value of type string"))
-								})
-							})
 						})
 
 						Context("and the cf app name can be determined", func() {
 
 							var (
-								cliCommandWithoutTerminalOutputCallCount int
-								cliCommandArgs                           [][]string
+								getAppsCallCount int
 							)
 
 							BeforeEach(func() {
-								cliCommandWithoutTerminalOutputCallCount = 0
-								cliCommandArgs = [][]string{}
-								fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-									cliCommandWithoutTerminalOutputCallCount++
-									cliCommandArgs = append(cliCommandArgs, args)
-									var cfAppName string
-									if strings.Contains(args[1], "062bd505-8b19-44ca-4451-4a932932143a") {
-										cfAppName = "cfapp1"
-									} else {
-										cfAppName = "cfapp2"
+								getAppsCallCount = 0
+								fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+									getAppsCallCount++
+									apps := []plugin_models.GetAppsModel{}
+									app1 := plugin_models.GetAppsModel{
+										Name: "cfapp1",
+										Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 									}
-									return []string{`{`, `"name": "` + cfAppName + `"`, `}`}, nil
+									app2 := plugin_models.GetAppsModel{
+										Name: "cfapp2",
+										Guid: "162bd505-1b19-14ca-1451-1a9329321431",
+									}
+									return append(apps, app1, app2), nil
 								}
 							})
 
@@ -285,22 +263,7 @@ var _ = Describe("Service Registry List", func() {
 							})
 
 							It("should have looked up the cf app names", func() {
-								Expect(cliCommandWithoutTerminalOutputCallCount).To(Equal(2))
-								Expect(len(cliCommandArgs)).To(Equal(2))
-
-								argsForApp1 := cliCommandArgs[0]
-								Expect(len(argsForApp1)).To(Equal(4))
-								Expect(argsForApp1[0]).To(Equal("curl"))
-								Expect(argsForApp1[1]).To(Equal("/v2/apps/062bd505-8b19-44ca-4451-4a932932143a/summary"))
-								Expect(argsForApp1[2]).To(Equal("-H"))
-								Expect(argsForApp1[3]).To(Equal("Accept: application/json"))
-
-								argsForApp2 := cliCommandArgs[1]
-								Expect(len(argsForApp2)).To(Equal(4))
-								Expect(argsForApp2[0]).To(Equal("curl"))
-								Expect(argsForApp2[1]).To(Equal("/v2/apps/162bd505-1b19-14ca-1451-1a9329321431/summary"))
-								Expect(argsForApp2[2]).To(Equal("-H"))
-								Expect(argsForApp2[3]).To(Equal("Accept: application/json"))
+								Expect(getAppsCallCount).To(Equal(2))
 							})
 
 							It("should not return an error", func() {

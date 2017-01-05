@@ -107,8 +107,13 @@ var _ = Describe("Deregister", func() {
 						return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid", nil
 					}
 
-					fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-						return []string{`{`, `"name": "some-cf-app"`, `}`}, nil
+					fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+						apps := []plugin_models.GetAppsModel{}
+						app1 := plugin_models.GetAppsModel{
+							Name: "some-cf-app",
+							Guid: "062bd505-8b19-44ca-4451-4a932932143a",
+						}
+						return append(apps, app1), nil
 					}
 
 					fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
@@ -189,8 +194,13 @@ var _ = Describe("Deregister", func() {
 				Context("but the cf app name cannot be found", func() {
 
 					BeforeEach(func() {
-						fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-							return []string{`{}`}, nil
+						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+							apps := []plugin_models.GetAppsModel{}
+							app1 := plugin_models.GetAppsModel{
+								Name: "unknown-app",
+								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
+							}
+							return append(apps, app1), nil
 						}
 					})
 
