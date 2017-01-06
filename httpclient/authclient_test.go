@@ -22,8 +22,6 @@ import (
 
 	"errors"
 
-	"bytes"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
@@ -40,12 +38,13 @@ var _ = Describe("Authclient", func() {
 	const testAccessToken = "securetoken"
 	const testUrl = "https://eureka.pivotal.io/auth/request"
 	var (
-		fakeClient  *httpclientfakes.FakeClient
-		authClient  httpclient.AuthenticatedClient
-		url         string
-		accessToken string
-		buf         *bytes.Buffer
-		err         error
+		fakeClient    *httpclientfakes.FakeClient
+		authClient    httpclient.AuthenticatedClient
+		url           string
+		accessToken   string
+		response      httpclient.AuthClientResponse
+		emptyResponse httpclient.AuthClientResponse
+		err           error
 	)
 
 	BeforeEach(func() {
@@ -56,7 +55,7 @@ var _ = Describe("Authclient", func() {
 
 	JustBeforeEach(func() {
 		authClient = httpclient.NewAuthenticatedClient(fakeClient)
-		buf, err = authClient.DoAuthenticatedGet(url, accessToken)
+		response, err = authClient.DoAuthenticatedGet(url, accessToken)
 	})
 
 	Context("when the underlying request cannot be created", func() {
@@ -65,7 +64,7 @@ var _ = Describe("Authclient", func() {
 		})
 
 		It("should return a suitable error if the request cannot be created", func() {
-			Expect(buf).To(BeNil())
+			Expect(response).To(Equal(emptyResponse))
 			Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
 		})
 	})
@@ -80,7 +79,7 @@ var _ = Describe("Authclient", func() {
 				})
 
 				It("should produce an error", func() {
-					Expect(buf).To(BeNil())
+					Expect(response).To(Equal(emptyResponse))
 					Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: request failed"))
 				})
 			})
@@ -94,7 +93,7 @@ var _ = Describe("Authclient", func() {
 					})
 
 					It("should produce an error", func() {
-						Expect(buf).To(BeNil())
+						Expect(response).To(Equal(emptyResponse))
 						Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: nil response body"))
 					})
 				})
@@ -108,7 +107,7 @@ var _ = Describe("Authclient", func() {
 					})
 
 					It("should produce an error", func() {
-						Expect(buf).To(BeNil())
+						Expect(response).To(Equal(emptyResponse))
 						Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: body cannot be read"))
 					})
 				})
@@ -133,7 +132,7 @@ var _ = Describe("Authclient", func() {
 					})
 
 					It("should produce a non-empty response body", func() {
-						Expect(buf.String()).Should(Equal("payload"))
+						Expect(response.Body.String()).Should(Equal("payload"))
 						Expect(err).To(BeNil())
 					})
 				})

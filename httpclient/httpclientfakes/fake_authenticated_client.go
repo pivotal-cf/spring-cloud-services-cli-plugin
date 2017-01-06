@@ -2,21 +2,20 @@
 package httpclientfakes
 
 import (
-	"bytes"
 	"sync"
 
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
 type FakeAuthenticatedClient struct {
-	DoAuthenticatedGetStub        func(url string, accessToken string) (*bytes.Buffer, error)
+	DoAuthenticatedGetStub        func(url string, accessToken string) (httpclient.AuthClientResponse, error)
 	doAuthenticatedGetMutex       sync.RWMutex
 	doAuthenticatedGetArgsForCall []struct {
 		url         string
 		accessToken string
 	}
 	doAuthenticatedGetReturns struct {
-		result1 *bytes.Buffer
+		result1 httpclient.AuthClientResponse
 		result2 error
 	}
 	DoAuthenticatedDeleteStub        func(url string, accessToken string) error
@@ -32,7 +31,7 @@ type FakeAuthenticatedClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken string) (*bytes.Buffer, error) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken string) (httpclient.AuthClientResponse, error) {
 	fake.doAuthenticatedGetMutex.Lock()
 	fake.doAuthenticatedGetArgsForCall = append(fake.doAuthenticatedGetArgsForCall, struct {
 		url         string
@@ -59,10 +58,10 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedGetArgsForCall(i int) (strin
 	return fake.doAuthenticatedGetArgsForCall[i].url, fake.doAuthenticatedGetArgsForCall[i].accessToken
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedGetReturns(result1 *bytes.Buffer, result2 error) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedGetReturns(result1 httpclient.AuthClientResponse, result2 error) {
 	fake.DoAuthenticatedGetStub = nil
 	fake.doAuthenticatedGetReturns = struct {
-		result1 *bytes.Buffer
+		result1 httpclient.AuthClientResponse
 		result2 error
 	}{result1, result2}
 }

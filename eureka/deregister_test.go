@@ -44,7 +44,7 @@ var _ = Describe("Deregister", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString("https://fake.com"), nil)
+		fakeAuthClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString("https://fake.com"), 200}, nil)
 		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
@@ -131,7 +131,7 @@ var _ = Describe("Deregister", func() {
 						return append(apps, app1), nil
 					}
 
-					fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+					fakeAuthClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -150,7 +150,7 @@ var _ = Describe("Deregister", func() {
 							 }
 						      ]
 						   }
-						}`), nil)
+						}`), 200}, nil)
 
 				})
 
@@ -162,7 +162,7 @@ var _ = Describe("Deregister", func() {
 
 					BeforeEach(func() {
 
-						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						fakeAuthClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -198,7 +198,7 @@ var _ = Describe("Deregister", func() {
 							 }
 						      ]
 						   }
-						}`), nil)
+						}`), 200}, nil)
 
 						It("should not deregister the service with a missing guid", func() {
 							Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
