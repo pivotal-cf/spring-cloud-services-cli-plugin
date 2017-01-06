@@ -1,0 +1,23 @@
+# Contributing to the Spring Cloud Services CLI Plugin
+
+The Cloud Foundry team uses GitHub and accepts code contributions via
+[pull requests](https://help.github.com/articles/using-pull-requests).
+
+Follow these steps to make a contribution to any of our open source repositories:
+
+1. If your contribution includes a change that is exposed to cf CLI users
+  (e.g. introducing a new command or flag), please submit an issue
+  to discuss it first.
+1. Ensure that you have either completed our CLA Agreement for [individuals](https://www.cloudfoundry.org/pdfs/CFF_Individual_CLA.pdf) or are a [public member](https://help.github.com/articles/publicizing-or-hiding-organization-membership/) of an organization that has signed the [corporate](https://www.cloudfoundry.org/pdfs/CFF_Corporate_CLA.pdf) CLA.
+1. Fork the project’s repository and add a remote (e.g. `git remote add my_fork ...`)
+1. Create a feature branch (e.g. `git checkout -b my_cool_feature`) and make changes on your branch
+1. Build the plugin, run the tests, and check that the plugin works as intended when installed
+1. Push to your fork (e.g. `git push my_fork my_cool_feature`) and [submit a pull request](https://help.github.com/articles/creating-a-pull-request)
+
+If you have a CLA on file, your contribution will be analyzed for product fit and engineering quality prior to merging.  
+
+Notes:
+* All contributions need to be sent using GitHub Pull Requests, preferably consisting of a single commit
+* Tests are required for any changes
+* We favor small pull requests with a single clearly-defined purpose  
+* Your pull request is much more likely to be accepted if it has a clear log message which conveys the intent of your change

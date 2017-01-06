@@ -1,0 +1,163 @@
+= Go Development
+:toc:
+:toc-placement!:
+
+toc::[]
+
+== Installing Go and Govendor
+
+1. link:https://golang.org/doc/install[Install Go].
+2. Set `$GOPATH` to point to a suitable directory such as `~/go`.
+This is where Go source code, except for that of the Go standard library, will reside.
+**The rest of this README assumes that `$GOPATH` consists of a single directory.**
+3. Ensure that your `$PATH` includes `$GOPATH/bin`.
+4. Clone the repository you want to work on (into `$GOPATH/src`):
+
+[source,bash]
+----
+$ cd $GOPATH/src/github.com/<org>
+$ git clone git@github.com:<org>/<repository>.git
+----
+5. Change the remote of the cloned repository if you want to push changes.
+
+6. External dependencies are managed using link:https://github.com/kardianos/govendor[Govendor].
+Essentially, dependencies are checked in to the `/vendor` directory. Please refer to Govendor's documentation for information on how to add new dependencies or modify
+existing ones. Install Govendor as follows:
+
+[source,bash]
+----
+$ go get -u github.com/kardianos/govendor
+----
+7. Ensure protobuf's are installed and that `protoc` is in your path. On mac you can install this with homebrew:
+
+[source,bash]
+----
+$ brew install protobuf
+----
+
+== Editing
+
+Many link:https://github.com/golang/go/wiki/IDEsAndTextEditorPlugins[Go IDEs and editor plugins] are available.
+IntelliJ IDEA users may prefer the link:https://github.com/go-lang-plugin-org/go-lang-idea-plugin[Go plugin].
+
+=== Setting Up IntelliJ IDEA
+
+To get decent support for Go in IntelliJ IDEA (on Mac OS X):
+
+1. link:https://www.jetbrains.com/idea/download/[Download] the latest version of IntelliJ IDEA (Ultimate or Community Edition).
+1. Install and start IntelliJ.
+1. Install the latest version of the link:https://github.com/go-lang-plugin-org/go-lang-idea-plugin[IntelliJ Go Plugin].
+1. Configure the Go SDK (In menu: View > Open Library Settings > Platform Settings > SDKs)
+1. Add new Go SDK referencing go install, usually `/usr/local/go`
+1. IntelliJ does not always detect GOPATH correctly, the GOPATH can be manually added (In menu: Settings > Languages and Frameworks > Go > Go Libraries > Global libraries)
+1. To ensure optimal performance, edit `/Applications/IntelliJ IDEA.app/Contents/bin/idea.vmoptions` (or equivalent for your version of IntelliJ) and change the maximum heap and metaspace sizes as follows: `-Xmx2048m` and `-XX:MaxMetaspaceSize=768m`.
+1. Restart IntelliJ.
+1. It is recommended that you set the keymap to "Mac OS X 10.5+" (search for "Keymap" in Preferences).
+
+Alternatively, link:https://www.jetbrains.com/go/[Gogland] provides an IntelliJ IDE specifically customised for Go development.
+
+==== goimports
+
+1. Install goimports: `go get golang.org/x/tools/cmd/goimports`
+1. Install the IntelliJ File Watchers plugin.
+1. _For each Go project_, configure a file watcher to run goimports whenever a file is saved:
+    * Add a file watcher by navigating to Preferences->File Watchers and hit `+`.
+    * Provide name `Goimports`, set the File Type to `Go`, add the full path of `goimports` as the Program, set the Arguments to `-w $FilePathRelativeToProjectRoot$`, and set the working directory (under "Other Options") to `$ProjectFileDir$`. Uncheck "Immediate file synchronization".
+    * Click Apply and Ok.
+
+==== ginkgo support
+
+Add some live templates for common Ginkgo statements:
+
+1. Install Ginkgo: `go get github.com/onsi/ginkgo/ginkgo`
+1. Download link:https://drive.google.com/a/pivotal.io/file/d/0B_po1wAvrP3cRmdoWmZBdUZWMTA/view?usp=sharing[ginkgo_templates.jar].
+1. Import the templates using `File->Import Settings...`.
+1. After restarting IntelliJ, templates can be expanded by typing one of the following and hitting `<tab>`:
+    * `describe`
+    * `context`
+    * `beforeeach`
+    * `justbeforeeach`
+    * `it`
+
+Add an "external tool" to be able to run ginkgo in IntelliJ:
+
+1. Under preferences, search for "External Tools".
+1. Add an external tool with name `Ginkgo Watch`, uncheck "Synchronize files after execution", specify program `ginkgo`, parameters `watch -race $FileDir$`, and working directory `$FileDir$`.
+1. Optionally, check "Show console when standard out changes" and/or "Show console when standard error changes" boxes, which will show the console pane whenever Ginkgo Watch runs.
+1. Click "Ok" and then "Apply".
+
+When it is started the Ginkgo Watch tool will run ginkgo against a package once and thereafter continually monitor the package files and re-run its tests if anything changes.
+
+To start Ginkgo Watch for a package: right-click on the package directory (or any of its files) in the Project hierarchy and select `Externals Tools->Ginkgo Watch` from the pop-up menu.
+
+To stop Ginkgo Watch, click on the red "stop" box in its console pane. If you terminate IntelliJ before doing this, it will warn you that Ginkgo Watch is running before you can exit.
+
+==== Key Features
+
+Here are the key features of IntelliJ with the Go plugin. The keymap is assumed to be "Mac OS X 10.5+" (see above).
+
+* Runs goimports automatically each time a file is saved. (Note that, by default, IntelliJ saves files when it loses focus.)
+* `cmd+b`: Go to the definition of the identifier under the cursor.
+* `cmd+[`: go back
+* `cmd+]`: go forward
+* `alt+F7`: find usages of the identifier under the cursor.
+* `cmd+shift+f`: search all the files in the project. (You can also search a directory by right clicking on the direction from the project view and choosing "Find in Path...".)
+* `shift+F6`: rename the identifier under the cursor. (Press escape unless you want to overtype the whole identifier.)
+* `cmd+7`: View the structure of the current file which displays types, methods, and so forth. There is a button to sort the contents alphabetically which is useful for large files.
+* `cmd+1`: View the project files.
+* `cmd+/`: comment the current line (or the current selection).
+* `cmd+d`: duplicate the current line.
+* `alt+shift+<cursor up>`: move the current line up.
+* `alt+shift+<cursor down>`: move the current line down.
+* Live templates. E.g. type `meth` in a Go file and then choose the live template by hitting tab to insert a method. Other live templates can be found under preferences.
+
+=== Coding Standards
+
+See link:https://golang.org/doc/effective_go.html[Effective Go] for tips on writing good Go code.
+Dip into the code of the Go standard libraries to get a better feel for idiomatic style.
+
+Goimports will automatically format code to the Go standard, but to do this manually:
+[source,bash]
+----
+$ cd $GOPATH/src/github.com/<org>/<repository>
+$ govendor fmt +local
+----
+
+== Testing
+
+Run the tests as follows:
+[source,bash]
+----
+$ cd $GOPATH/src/github.com/<org>/<repository>
+$ govendor test +local
+----
+
+Tests are written using the link:https://onsi.github.io/ginkgo/[Ginkgo] BDD testing framework
+and the link:http://onsi.github.io/gomega/[Gomega] matcher library, which are included in the `/vendor`
+directory.
+
+To run tests using Ginkgo, install the executable as follows (unless you did that already):
+[source,bash]
+----
+$ go get -u github.com/onsi/ginkgo/ginkgo
+----
+and run the tests as follows:
+[source,bash]
+----
+$ cd $GOPATH/src/github.com/<org>/<repository>
+$ ginkgo -r -cover -race
+----
+
+Test mocks are created using link:https://github.com/maxbrunsfeld/counterfeiter[Counterfeiter]. Install the `counterfeiter` executable as follows:
+[source,bash]
+----
+$ go get github.com/maxbrunsfeld/counterfeiter
+----
+
+Interfaces to be mocked are tagged `//go:generate counterfeiter ...` and so mocks may
+be regenerated by issuing:
+[source,bash]
+----
+$ cd $GOPATH/src/github.com/<org>/<repository>
+$ govendor generate +local
+----

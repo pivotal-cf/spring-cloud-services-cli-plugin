@@ -1,4 +1,4 @@
-# Spring Cloud Services CLI plugin
+# Spring Cloud Services CLI Plugin
 
 This repository provides a [Cloud Foundry CLI](https://github.com/cloudfoundry/cli) plugin for
 Spring Cloud Services.
@@ -8,9 +8,16 @@ For information on plugin development, see
 
 ## Go Development
 
-See the Spring Cloud Services
-[Go Development](https://github.com/pivotal-cf/spring-cloud-services-getting-started/blob/master/docs/go.adoc) guide.
+See the [Go Development](docs/go.adoc) guide.
 (If you just want to build and install the plugin, simply install go and govendor.)
+
+## Testing
+
+Run the tests as follows:
+```bash
+$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
+$ govendor test +local
+```
 
 ## Building
 
@@ -29,3 +36,12 @@ $ cf install-plugin -f $GOPATH/bin/spring-cloud-services-cli-plugin
 ```
 
 The plugin's commands may then be listed by issuing `cf help`.
+
+## License
+
+The Spring Cloud Services CLI plugin is Open Source software released under the
+[Apache 2.0 license](http://www.apache.org/licenses/LICENSE-2.0.html).
+
+## Contributing
+
+Contributions are welcomed. Please refer to the [Contributor's Guide](CONTRIBUTING.md).
