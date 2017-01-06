@@ -54,15 +54,15 @@ func getRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient
 
 func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string) ([]eurekaAppRecord, error) {
 	registeredApps := []eurekaAppRecord{}
-	response, err := authClient.DoAuthenticatedGet(eurekaUrl+"eureka/apps", accessToken)
+	buf, _, err := authClient.DoAuthenticatedGet(eurekaUrl+"eureka/apps", accessToken)
 	if err != nil {
 		return registeredApps, fmt.Errorf("Service registry error: %s", err)
 	}
 
 	var listResp ListResp
-	err = json.Unmarshal(response.Body.Bytes(), &listResp)
+	err = json.Unmarshal(buf.Bytes(), &listResp)
 	if err != nil {
-		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(response.Body.Bytes()))
+		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(buf.Bytes()))
 	}
 
 	apps := listResp.Applications.Application

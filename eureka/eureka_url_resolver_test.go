@@ -23,19 +23,17 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
 var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 	var (
-		dashboardUrl  string
-		accessToken   string
-		authClient    *httpclientfakes.FakeAuthenticatedClient
-		eurekaUrl     string
-		err           error
-		emptyResponse httpclient.AuthClientResponse
+		dashboardUrl string
+		accessToken  string
+		authClient   *httpclientfakes.FakeAuthenticatedClient
+		eurekaUrl    string
+		err          error
 	)
 
 	BeforeEach(func() {
@@ -77,7 +75,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 		Context("when eureka cannot be contacted", func() {
 			BeforeEach(func() {
-				authClient.DoAuthenticatedGetReturns(emptyResponse, errors.New("some error"))
+				authClient.DoAuthenticatedGetReturns(nil, 502, errors.New("some error"))
 			})
 
 			It("should return a suitable error", func() {
@@ -89,7 +87,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 		Context("when eureka can be contacted", func() {
 			Context("but the returned buffer is nil", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(emptyResponse, nil)
+					authClient.DoAuthenticatedGetReturns(nil, 200, nil)
 				})
 
 				It("should return a suitable error", func() {
@@ -100,7 +98,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("but the response body contains invalid JSON", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(""), 200}, nil)
+					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(""), 200, nil)
 				})
 
 				It("should return a suitable error", func() {
@@ -111,7 +109,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("but the response body has the wrong content", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(`{"credentials":0}`), 200}, nil)
+					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":0}`), 200, nil)
 				})
 
 				It("should return a suitable error", func() {
@@ -122,7 +120,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("but the '/cli/instance endpoint cannot be found", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(`{"credentials":0}`), 404}, nil)
+					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":0}`), 404, nil)
 				})
 				It("should warn that the SCS version might be too old", func() {
 					versionWarning := "The /cli/instance endpoint could not be found.\n" +
@@ -136,7 +134,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("and the response body has the correct content", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(httpclient.AuthClientResponse{bytes.NewBufferString(`{"credentials":{"uri":"https://eurekadashboardurl"}}`), 200}, nil)
+					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":{"uri":"https://eurekadashboardurl"}}`), 200, nil)
 				})
 
 				It("should return a suitable error", func() {

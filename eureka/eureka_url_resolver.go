@@ -40,11 +40,10 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 
 	parsedUrl.Path = "/cli/instance/" + guid
 
-	response, err := authClient.DoAuthenticatedGet(parsedUrl.String(), accessToken)
-	buffer := response.Body
+	buffer, statusCode, err := authClient.DoAuthenticatedGet(parsedUrl.String(), accessToken)
 
 	//In the case of a 404, the most likely cause is that the CLI version is greater than the broker version.
-	if response.StatusCode == 404 {
+	if statusCode == 404 {
 		return "", errors.New("The /cli/instance endpoint could not be found.\n" +
 			"This could be because the Spring Cloud Services broker version is too old.\n" +
 			"Please ensure SCS is at least version 1.3.3.\n")
