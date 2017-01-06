@@ -9,7 +9,7 @@ import (
 )
 
 type FakeAuthenticatedClient struct {
-	DoAuthenticatedGetStub        func(url string, accessToken string) (*bytes.Buffer, error)
+	DoAuthenticatedGetStub        func(url string, accessToken string) (*bytes.Buffer, int, error)
 	doAuthenticatedGetMutex       sync.RWMutex
 	doAuthenticatedGetArgsForCall []struct {
 		url         string
@@ -17,7 +17,8 @@ type FakeAuthenticatedClient struct {
 	}
 	doAuthenticatedGetReturns struct {
 		result1 *bytes.Buffer
-		result2 error
+		result2 int
+		result3 error
 	}
 	DoAuthenticatedDeleteStub        func(url string, accessToken string) error
 	doAuthenticatedDeleteMutex       sync.RWMutex
@@ -32,7 +33,7 @@ type FakeAuthenticatedClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken string) (*bytes.Buffer, error) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken string) (*bytes.Buffer, int, error) {
 	fake.doAuthenticatedGetMutex.Lock()
 	fake.doAuthenticatedGetArgsForCall = append(fake.doAuthenticatedGetArgsForCall, struct {
 		url         string
@@ -43,7 +44,7 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken 
 	if fake.DoAuthenticatedGetStub != nil {
 		return fake.DoAuthenticatedGetStub(url, accessToken)
 	} else {
-		return fake.doAuthenticatedGetReturns.result1, fake.doAuthenticatedGetReturns.result2
+		return fake.doAuthenticatedGetReturns.result1, fake.doAuthenticatedGetReturns.result2, fake.doAuthenticatedGetReturns.result3
 	}
 }
 
@@ -59,12 +60,13 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedGetArgsForCall(i int) (strin
 	return fake.doAuthenticatedGetArgsForCall[i].url, fake.doAuthenticatedGetArgsForCall[i].accessToken
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedGetReturns(result1 *bytes.Buffer, result2 error) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedGetReturns(result1 *bytes.Buffer, result2 int, result3 error) {
 	fake.DoAuthenticatedGetStub = nil
 	fake.doAuthenticatedGetReturns = struct {
 		result1 *bytes.Buffer
-		result2 error
-	}{result1, result2}
+		result2 int
+		result3 error
+	}{result1, result2, result3}
 }
 
 func (fake *FakeAuthenticatedClient) DoAuthenticatedDelete(url string, accessToken string) error {

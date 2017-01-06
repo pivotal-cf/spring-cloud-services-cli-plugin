@@ -44,7 +44,8 @@ var _ = Describe("Authclient", func() {
 		authClient  httpclient.AuthenticatedClient
 		url         string
 		accessToken string
-		buf         *bytes.Buffer
+		body        *bytes.Buffer
+		status      int
 		err         error
 	)
 
@@ -56,7 +57,7 @@ var _ = Describe("Authclient", func() {
 
 	JustBeforeEach(func() {
 		authClient = httpclient.NewAuthenticatedClient(fakeClient)
-		buf, err = authClient.DoAuthenticatedGet(url, accessToken)
+		body, status, err = authClient.DoAuthenticatedGet(url, accessToken)
 	})
 
 	Context("when the underlying request cannot be created", func() {
@@ -65,7 +66,7 @@ var _ = Describe("Authclient", func() {
 		})
 
 		It("should return a suitable error if the request cannot be created", func() {
-			Expect(buf).To(BeNil())
+			Expect(body).To(BeNil())
 			Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
 		})
 	})
@@ -80,13 +81,13 @@ var _ = Describe("Authclient", func() {
 				})
 
 				It("should produce an error", func() {
-					Expect(buf).To(BeNil())
+					Expect(body).To(BeNil())
 					Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: request failed"))
 				})
 			})
 
 			Context("and the request succeeds", func() {
-				Context("but the response body is nil", func() {
+				Context("but the body body is nil", func() {
 					BeforeEach(func() {
 						resp := &http.Response{}
 						//resp.Body = nil
@@ -94,12 +95,12 @@ var _ = Describe("Authclient", func() {
 					})
 
 					It("should produce an error", func() {
-						Expect(buf).To(BeNil())
+						Expect(body).To(BeNil())
 						Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: nil response body"))
 					})
 				})
 
-				Context("but the response body cannot be read", func() {
+				Context("but the body body cannot be read", func() {
 					BeforeEach(func() {
 						resp := &http.Response{}
 
@@ -108,12 +109,12 @@ var _ = Describe("Authclient", func() {
 					})
 
 					It("should produce an error", func() {
-						Expect(buf).To(BeNil())
+						Expect(body).To(BeNil())
 						Expect(err).To(MatchError("authenticated get of 'https://eureka.pivotal.io/auth/request' failed: body cannot be read"))
 					})
 				})
 
-				Context("and the response body can be read", func() {
+				Context("and the body body can be read", func() {
 					BeforeEach(func() {
 						resp := &http.Response{}
 						resp.Body = ioutil.NopCloser(strings.NewReader("payload"))
@@ -132,8 +133,8 @@ var _ = Describe("Authclient", func() {
 						Expect(req.Header.Get("Authorization")).To(Equal("securetoken"))
 					})
 
-					It("should produce a non-empty response body", func() {
-						Expect(buf.String()).Should(Equal("payload"))
+					It("should produce a non-empty body body", func() {
+						Expect(body.String()).Should(Equal("payload"))
 						Expect(err).To(BeNil())
 					})
 				})

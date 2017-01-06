@@ -43,7 +43,7 @@ var _ = Describe("Service Registry List", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString("https://fake.com"), nil)
+		fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString("https://fake.com"), 200, nil)
 		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
@@ -117,7 +117,7 @@ var _ = Describe("Service Registry List", func() {
 			Context("and the eureka dashboard URL can be resolved", func() {
 				Context("but eureka cannot be contacted", func() {
 					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"authenticated":true}`), errors.New("some error"))
+						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"authenticated":true}`), 200, errors.New("some error"))
 					})
 
 					It("should return a suitable error", func() {
@@ -129,7 +129,7 @@ var _ = Describe("Service Registry List", func() {
 				Context("and eureka responds", func() {
 					Context("but the response body contains invalid JSON", func() {
 						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(""), nil)
+							fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(""), 200, nil)
 						})
 
 						It("should return a suitable error", func() {
@@ -172,7 +172,7 @@ var _ = Describe("Service Registry List", func() {
          }
       ]
    }
-}`), nil)
+}`), 200, nil)
 						})
 
 						Context("but no applications are registered", func() {
@@ -182,7 +182,7 @@ var _ = Describe("Service Registry List", func() {
    "applications":{
        "application":[]
    }
-}`), nil)
+}`), 200, nil)
 							})
 
 							It("should not return an error", func() {
@@ -215,7 +215,7 @@ var _ = Describe("Service Registry List", func() {
          }
       ]
    }
-}`), nil)
+}`), 200, nil)
 								})
 
 								It("should not return an error", func() {
