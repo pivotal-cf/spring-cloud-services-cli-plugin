@@ -21,21 +21,35 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cli/cf/flags"
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
+const skipSslValidationUsage = "Skip verification of the service registry dashboard endpoint. Not recommended!"
+const cfInstanceIndexUsage = "Deregister a specific instance in the Eureka registry. The instance index number can be found by using the the service-registry-list command."
+const sslValidationFlagName = "skip-ssl-validation"
+const instanceIndexFlagName = "cf-instance-index"
+
+var (
+	skipSslValidation bool
+	cfInstanceIndex   *int
+)
+
 // Plugin is a struct implementing the Plugin interface, defined by the core CLI, which can
 // be found in "code.cloudfoundry.org/cli/plugin/plugin.go".
 type Plugin struct{}
 
-const skipSslValidationUsage = "Skip verification of the service registry dashboard endpoint. Not recommended!"
-
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 
-	skipSslValidation, otherArgs := parseFlags(args)
+	positionalArgs, err := parseFlags(args)
+	if err != nil {
+		format.Diagnose(string(err.Error()), os.Stderr, func() {
+			os.Exit(1)
+		})
+	}
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSslValidation},
 	}
@@ -45,20 +59,20 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	switch args[0] {
 
 	case "service-registry-deregister":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
-		cfApplicationName := getCfApplicationName(otherArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Deleting application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient)
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
+		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
 		})
 
 	case "service-registry-info":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
 			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)
 		})
 
 	case "service-registry-list":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(otherArgs, args[0])
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
 			return eureka.List(cliConnection, serviceRegistryInstanceName, authClient)
 		})
@@ -95,17 +109,24 @@ func diagnoseWithHelp(message string, operation string) {
 	os.Exit(1)
 }
 
-func parseFlags(args []string) (bool, []string) {
-	others := []string{}
-	found := false
-	for _, arg := range args {
-		if arg == "--skip-ssl-validation" {
-			found = true
-		} else {
-			others = append(others, arg)
-		}
+func parseFlags(args []string) ([]string, error) {
+
+	fc := flags.New()
+	fc.NewBoolFlag(sslValidationFlagName, sslValidationFlagName, skipSslValidationUsage) //name, short_name and usage of the string flag
+	fc.NewIntFlag(instanceIndexFlagName, "i", skipSslValidationUsage)                    //name, short_name and usage of the string flag
+	err := fc.Parse(args...)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing arguments: %s", err)
 	}
-	return found, others
+	skipSslValidation = fc.Bool(sslValidationFlagName)
+
+	if fc.IsSet(instanceIndexFlagName) {
+		//Use a pointer instead of value because 0 initialized int is a valid instance index
+		var idx int
+		idx = fc.Int(instanceIndexFlagName)
+		cfInstanceIndex = &idx
+	}
+	return fc.Args(), nil
 }
 
 func (c *Plugin) GetMetadata() plugin.PluginMetadata {
@@ -128,7 +149,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "srd",
 				UsageDetails: plugin.Usage{
 					Usage:   "   cf service-registry-deregister SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
-					Options: map[string]string{"--skip-ssl-validation": skipSslValidationUsage},
+					Options: map[string]string{"--skip-ssl-validation": skipSslValidationUsage, "-i/--cf-instance-index": cfInstanceIndexUsage},
 				},
 			},
 			{

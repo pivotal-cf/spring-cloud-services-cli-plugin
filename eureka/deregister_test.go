@@ -21,11 +21,14 @@ import (
 	"bytes"
 	"errors"
 
+	"fmt"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
@@ -39,6 +42,7 @@ var _ = Describe("Deregister", func() {
 		getServiceModel   plugin_models.GetService_Model
 		output            string
 		err               error
+		instanceIndex     *int
 	)
 
 	BeforeEach(func() {
@@ -51,7 +55,7 @@ var _ = Describe("Deregister", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = eureka.DeregisterWithResolver(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, fakeResolver)
+		output, err = eureka.DeregisterWithResolver(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, fakeResolver)
 	})
 
 	Context("when the service is not found", func() {
@@ -177,7 +181,7 @@ var _ = Describe("Deregister", func() {
 								     "cfInstanceIndex":"1"
 								  }
 							       },
-							       }							       {
+							       {
 								  "app":"APP-2",
 								  "status":"UNKNOWN",
 								  "metadata":{
@@ -190,19 +194,29 @@ var _ = Describe("Deregister", func() {
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
-								     "cfAppGuid":"162bd505-8b19-44ca-4451-4a932932143a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
 								     "cfInstanceIndex":"3"
 								  }
-							       },
+							       }
 							    ]
 							 }
 						      ]
 						   }
 						}`), 200, nil)
 
-						It("should not deregister the service with a missing guid", func() {
-							Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
-						})
+					})
+					It("should not deregister the service with a missing guid", func() {
+						Expect(err).ToNot(HaveOccurred())
+						Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
+					})
+
+					It("should inform the user that 2 instances have been deregistered", func() {
+						template := "Deregistered service instance %s with index %s\n"
+						line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
+						line2 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-3")), format.Bold(format.Cyan("3")))
+
+						Expect(output).To(Not(BeEmpty()))
+						Expect(output).To(ContainSubstring(line1 + line2))
 					})
 				})
 
@@ -222,6 +236,90 @@ var _ = Describe("Deregister", func() {
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
 						Expect(err).To(MatchError("cf app name some-cf-app not found"))
+					})
+				})
+
+				Context("when an instance index is specified", func() {
+					BeforeEach(func() {
+						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+							apps := []plugin_models.GetAppsModel{}
+							app1 := plugin_models.GetAppsModel{
+								Name: "some-cf-app",
+								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
+							}
+							return append(apps, app1), nil
+						}
+						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						{
+						   "applications":{
+						      "application":[
+							 {
+							    "instance":[
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"0"
+								  }
+							       },
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"1"
+								  }
+							       },
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"2"
+								  }
+							       }
+							    ]
+							 }
+						      ]
+						   }
+						}`), 200, nil)
+
+						//Set the instance index argument
+						var idx = 1
+						instanceIndex = &idx
+					})
+
+					It("should not raise an error", func() {
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("should only call the deregister function once", func() {
+						Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+					})
+
+					It("should inform the user about the instance deregistration", func() {
+						template := "Deregistered service instance %s with index %s\n"
+						line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
+
+						Expect(output).To(Not(BeEmpty()))
+						Expect(output).To(ContainSubstring(line1))
+					})
+
+					Context("when an incorrect instance index is specified", func() {
+
+						BeforeEach(func() {
+							var idx = 99
+							instanceIndex = &idx
+						})
+
+						It("should return a suitable error", func() {
+							Expect(err).To(HaveOccurred())
+							Expect(err).To(MatchError("No instance found with index 99"))
+						})
 					})
 				})
 			})
