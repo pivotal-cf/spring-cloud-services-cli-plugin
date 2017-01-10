@@ -152,7 +152,7 @@ var _ = Describe("Service Registry List", func() {
                   "metadata":{
                      "zone":"zone1",
                      "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-                     "cfInstanceIndex":"2"
+                     "cfInstanceIndex":"0"
                   }
                }
             ]
@@ -165,7 +165,16 @@ var _ = Describe("Service Registry List", func() {
                   "metadata":{
                      "zone":"zone2",
                      "cfAppGuid":"162bd505-1b19-14ca-1451-1a9329321431",
-                     "cfInstanceIndex":"3"
+                     "cfInstanceIndex":"0"
+                  }
+               },
+               {
+                  "app":"APP-2",
+                  "status":"UP",
+                  "metadata":{
+                     "zone":"zone2",
+                     "cfAppGuid":"162bd505-1b19-14ca-1451-1a9329321431",
+                     "cfInstanceIndex":"1"
                   }
                }
             ]
@@ -278,7 +287,7 @@ var _ = Describe("Service Registry List", func() {
 							})
 
 							It("should have looked up the cf app names", func() {
-								Expect(getAppsCallCount).To(Equal(2))
+								Expect(getAppsCallCount).To(Equal(3))
 							})
 
 							It("should not return an error", func() {
@@ -296,8 +305,9 @@ var _ = Describe("Service Registry List", func() {
 							It("should return the registered applications", func() {
 								tab := &format.Table{}
 								tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
-								tab.AddRow([]string{"APP-1", "cfapp1", "2", "zone1", "UP"})
-								tab.AddRow([]string{"APP-2", "cfapp2", "3", "zone2", "OUT_OF_SERVICE"})
+								tab.AddRow([]string{"APP-1", "cfapp1", "0", "zone1", "UP"})
+								tab.AddRow([]string{"APP-2", "cfapp2", "0", "zone2", "OUT_OF_SERVICE"})
+								tab.AddRow([]string{"APP-2", "cfapp2", "1", "zone2", "UP"})
 								Expect(output).To(ContainSubstring(tab.String()))
 							})
 						})

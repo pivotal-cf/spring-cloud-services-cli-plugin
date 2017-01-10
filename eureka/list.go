@@ -78,20 +78,25 @@ func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string,
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
 	}
-	tab := &format.Table{}
-	tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
 	registeredApps, err := getAllRegisteredApps(cliConnection, authClient, accessToken, eureka)
 
 	if err != nil {
 		return "", err
 	}
+	return formatAppList(registeredApps, eureka, srInstanceName), nil
+}
+
+func formatAppList(registeredApps []eurekaAppRecord, eurekaUrl string, srInstanceName string) string {
+	tab := &format.Table{}
+	tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
+
 	if len(registeredApps) == 0 {
-		return fmt.Sprintf("Service instance: %s\nServer URL: %s\n\nNo registered applications found\n", srInstanceName, eureka), nil
+		return fmt.Sprintf("Service instance: %s\nServer URL: %s\n\nNo registered applications found\n", srInstanceName, eurekaUrl)
 	}
 	for _, app := range registeredApps {
 
 		tab.AddRow([]string{app.eurekaAppName, app.cfAppName, app.instanceIndex, app.zone, app.status})
 	}
 
-	return fmt.Sprintf("Service instance: %s\nServer URL: %s\n\n%s", srInstanceName, eureka, tab.String()), nil
+	return fmt.Sprintf("Service instance: %s\nServer URL: %s\n\n%s", srInstanceName, eurekaUrl, tab.String())
 }

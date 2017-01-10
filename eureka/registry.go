@@ -66,7 +66,7 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 	}
 
 	apps := listResp.Applications.Application
-	for i, app := range apps {
+	for _, app := range apps {
 		instances := app.Instance
 		for _, instance := range instances {
 			metadata := instance.Metadata
@@ -84,7 +84,7 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 				}
 
 			}
-			registeredApps = append(registeredApps[:i], eurekaAppRecord{
+			registeredApps = append(registeredApps, eurekaAppRecord{
 				cfAppGuid:     cfAppGuid,
 				cfAppName:     cfAppNm,
 				eurekaAppName: instance.App,
