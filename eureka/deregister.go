@@ -53,15 +53,14 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 	}
 	statusMessage := ""
 	statusTemplate := "Deregistered service instance %s with index %s\n"
-	//Instance index passed as an int pointer, allowing it to be optional
-	if instanceIndex == nil { //Index is omited, deregister all instances
+	if instanceIndex == nil { //Index is omitted, deregister all instances
+		var err error
 		for _, app := range apps {
 			err = deregister(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
 			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
-
-			if err != nil {
-				return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
-			}
+		}
+		if err != nil {
+			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
 		}
 	} else { //Instance ID provided, deregister a single instance
 		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
@@ -75,7 +74,6 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
 		}
 	}
-	//return fmt.Sprintf("%s\n%s\n", statusMessage, format.Bold(format.Green("OK"))), nil
 	return statusMessage, nil
 }
 
@@ -114,7 +112,5 @@ func getRegisteredAppByInstanceIndex(appRecords []eurekaAppRecord, requestedInde
 			return app, nil
 		}
 	}
-	//No instance found with requested index
 	return eurekaAppRecord{}, fmt.Errorf("No instance found with index %d", requestedIndex)
-
 }
