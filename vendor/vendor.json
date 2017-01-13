@@ -3,6 +3,12 @@
 	"ignore": "",
 	"package": [
 		{
+			"checksumSHA1": "rvaiyC5SczJJkhEN1myZVgQgsJw=",
+			"path": "code.cloudfoundry.org/cli/cf/flags",
+			"revision": "4bf6772d189913f03d6ca5e597f2d88f4a344717",
+			"revisionTime": "2017-01-07T01:22:35Z"
+		},
+		{
 			"checksumSHA1": "fIGnh0krCyXthCGF8pKZQk54Qxc=",
 			"path": "code.cloudfoundry.org/cli/plugin",
 			"revision": "a8ef75f732713bcd6ced1e1f24500b096d3173da",
@@ -37,6 +43,12 @@
 			"path": "code.cloudfoundry.org/cli/utils/testhelpers/rpcserver/rpcserverfakes",
 			"revision": "a8ef75f732713bcd6ced1e1f24500b096d3173da",
 			"revisionTime": "2016-11-24T00:34:53Z"
+		},
+		{
+			"checksumSHA1": "98tiBpTX7NBrAHEqcsT8GJPfwps=",
+			"path": "github.com/cloudfoundry/cli/cf/flags",
+			"revision": "4bf6772d189913f03d6ca5e597f2d88f4a344717",
+			"revisionTime": "2017-01-07T01:22:35Z"
 		},
 		{
 			"checksumSHA1": "nX1W2xXs8wsF/UNlO+2fWXO2D60=",

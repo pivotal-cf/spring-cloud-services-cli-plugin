@@ -20,15 +20,18 @@ import (
 
 	"errors"
 
+	"strconv"
+
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
-	return DeregisterWithResolver(cliConnection, srInstanceName, cfAppName, authenticatedClient, EurekaUrlFromDashboardUrl)
+func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
+	return DeregisterWithResolver(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, EurekaUrlFromDashboardUrl)
 }
 
-func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient,
+func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int,
 	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
 	serviceModel, err := cliConnection.GetService(srInstanceName)
 	if err != nil {
@@ -48,12 +51,30 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 	if err != nil {
 		return "", err
 	}
-
-	for _, app := range apps {
+	statusMessage := ""
+	statusTemplate := "Deregistered service instance %s with index %s\n"
+	if instanceIndex == nil { //Index is omitted, deregister all instances
+		var err error
+		for _, app := range apps {
+			err = deregister(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
+			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
+		}
+		if err != nil {
+			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+		}
+	} else { //Instance ID provided, deregister a single instance
+		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
+		if err != nil {
+			return "", err
+		}
 		err = deregister(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
-	}
+		statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 
-	return "", nil
+		if err != nil {
+			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+		}
+	}
+	return statusMessage, nil
 }
 
 func deregister(authClient httpclient.AuthenticatedClient, accessToken string, eureka string, eurekaAppName string, instanceId string) error {
@@ -79,4 +100,17 @@ func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClie
 	}
 
 	return registeredAppsWithCfAppName, nil
+}
+
+func getRegisteredAppByInstanceIndex(appRecords []eurekaAppRecord, requestedIndex int) (eurekaAppRecord, error) {
+	for _, app := range appRecords {
+		registeredIndex, err := strconv.Atoi(app.instanceIndex)
+		if err != nil {
+			return eurekaAppRecord{}, err
+		}
+		if registeredIndex == requestedIndex {
+			return app, nil
+		}
+	}
+	return eurekaAppRecord{}, fmt.Errorf("No instance found with index %d", requestedIndex)
 }

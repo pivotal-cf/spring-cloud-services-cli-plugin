@@ -36,7 +36,7 @@ func RunAction(cliConnection plugin.CliConnection, message string, action func()
 	printStartAction(cliConnection, message, writer)
 	output, err := action()
 	if err != nil {
-		diagnose(err.Error(), writer, onFailure)
+		Diagnose(err.Error(), writer, onFailure)
 		return
 	}
 	fmt.Fprintf(writer, "%s\n\n%s", Bold(Green("OK")), output)
@@ -61,7 +61,7 @@ func printStartAction(cliConnection plugin.CliConnection, message string, writer
 	fmt.Fprintf(writer, "%s in org %s / space %s as %s...\n", message, Bold(Cyan(orgModel.Name)), Bold(Cyan(spaceModel.Name)), Bold(Cyan(user)))
 }
 
-func diagnose(message string, writer io.Writer, onFailure func()) {
+func Diagnose(message string, writer io.Writer, onFailure func()) {
 	fmt.Fprintf(writer, "%s\n", Bold(Red("FAILED")))
 
 	hint := ""
