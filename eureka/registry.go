@@ -22,6 +22,7 @@ import (
 	"errors"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
@@ -65,6 +66,11 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(buf.Bytes()))
 	}
 
+	cfApps, err := cliConnection.GetApps()
+	if err != nil {
+		return registeredApps, err
+	}
+
 	apps := listResp.Applications.Application
 	for i, app := range apps {
 		instances := app.Instance
@@ -78,7 +84,7 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 				cfAppNm = UnknownCfAppName
 				cfInstanceIndex = UnknownCfInstanceIndex
 			} else {
-				cfAppNm, err = cfAppName(cliConnection, metadata.CfAppGuid)
+				cfAppNm, err = cfAppName(cfApps, metadata.CfAppGuid)
 				if err != nil {
 					return registeredApps, fmt.Errorf("Failed to determine cf app name corresponding to cf app GUID '%s': %s", metadata.CfAppGuid, err)
 				}
@@ -98,12 +104,7 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 	return registeredApps, nil
 }
 
-func cfAppName(cliConnection plugin.CliConnection, cfAppGuid string) (string, error) {
-	var err error
-	cliCmdAppsOutput, err := cliConnection.GetApps()
-	if err != nil {
-		return "", err
-	}
+func cfAppName(cliCmdAppsOutput []plugin_models.GetAppsModel, cfAppGuid string) (string, error) {
 	for _, app := range cliCmdAppsOutput {
 		if app.Guid == cfAppGuid {
 			return app.Name, nil
