@@ -60,4 +60,27 @@ var _ = Describe("Flags", func() {
 		})
 
 	})
+
+	Context("when no flag is passed for instance index", func() {
+
+		BeforeEach(func() {
+			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation"}
+		})
+
+		It("should be parsed as nil", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(instanceIdx).To(BeNil())
+		})
+	})
+
+	Context("when a string value is passed for instance index", func() {
+
+		BeforeEach(func() {
+			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation", "-i", "one"}
+		})
+
+		It("should be parsed as nil", func() {
+			Expect(err).To(MatchError("Error parsing arguments: Value for flag 'cf-instance-index' must be an integer"))
+		})
+	})
 })
