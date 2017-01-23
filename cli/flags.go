@@ -23,11 +23,12 @@ func ParseFlags(args []string) (bool, *int, []string, error) {
 		return false, nil, nil, fmt.Errorf("Error parsing arguments: %s", err)
 	}
 	skipSslValidation := fc.Bool(sslValidationFlagName)
-	var idx int
 	//Use a pointer instead of value because 0 initialized int is a valid instance index
-	cfInstanceIndex := &idx
+	var cfInstanceIndex *int
 	if fc.IsSet(instanceIndexFlagName) {
+		var idx int
 		idx = fc.Int(instanceIndexFlagName)
+		cfInstanceIndex = &idx
 	}
 	return skipSslValidation, cfInstanceIndex, fc.Args(), nil
 }
