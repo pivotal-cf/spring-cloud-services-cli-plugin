@@ -79,7 +79,7 @@ var _ = Describe("Flags", func() {
 			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation", "-i", "one"}
 		})
 
-		It("should be parsed as nil", func() {
+		It("should raise a suitable error", func() {
 			Expect(err).To(MatchError("Error parsing arguments: Value for flag 'cf-instance-index' must be an integer"))
 		})
 	})
