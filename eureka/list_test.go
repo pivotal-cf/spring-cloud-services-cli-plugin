@@ -239,14 +239,32 @@ var _ = Describe("Service Registry List", func() {
 								})
 							})
 
-							Context("because GetApps returns an error", func() {
+							Context("because the app does not exist in cloud foundry", func() {
 								BeforeEach(func() {
-									fakeCliConnection.GetAppsReturns([]plugin_models.GetAppsModel{}, errors.New("some error"))
+									fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+{
+   "applications":{
+      "application":[
+         {
+            "instance":[
+               {
+                  "app":"APP-1",
+                  "status":"UP",
+                  "metadata":{
+                     "zone":"zone1",
+                     "cfAppGuid":"unknown-guid"
+                  }
+               }
+            ]
+         }
+      ]
+   }
+}`), 200, nil)
 								})
 
 								It("should return a suitable error", func() {
 									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID '062bd505-8b19-44ca-4451-4a932932143a': some error"))
+									Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID 'unknown-guid': CF App not found"))
 								})
 							})
 
@@ -287,7 +305,7 @@ var _ = Describe("Service Registry List", func() {
 							})
 
 							It("should have looked up the cf app names", func() {
-								Expect(getAppsCallCount).To(Equal(3))
+								Expect(getAppsCallCount).To(Equal(1))
 							})
 
 							It("should not return an error", func() {
