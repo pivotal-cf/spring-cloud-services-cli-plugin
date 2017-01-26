@@ -104,8 +104,8 @@ func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpcli
 	return registeredApps, nil
 }
 
-func cfAppName(cliCmdAppsOutput []plugin_models.GetAppsModel, cfAppGuid string) (string, error) {
-	for _, app := range cliCmdAppsOutput {
+func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, error) {
+	for _, app := range cfApps {
 		if app.Guid == cfAppGuid {
 			return app.Name, nil
 		}
