@@ -8,7 +8,7 @@ Follow these steps to make a contribution to any of our open source repositories
 1. If your contribution includes a change that is exposed to cf CLI users
   (e.g. introducing a new command or flag), please submit an issue
   to discuss it first.
-1. Ensure that you have either completed our CLA Agreement for [individuals](https://www.cloudfoundry.org/pdfs/CFF_Individual_CLA.pdf) or are a [public member](https://help.github.com/articles/publicizing-or-hiding-organization-membership/) of an organization that has signed the [corporate](https://www.cloudfoundry.org/pdfs/CFF_Corporate_CLA.pdf) CLA.
+1. If you have not previously done so, please fill out and submit the [Contributor License Agreement](https://cla.pivotal.io/sign/pivotal).
 1. Fork the project’s repository and add a remote (e.g. `git remote add my_fork ...`)
 1. Create a feature branch (e.g. `git checkout -b my_cool_feature`) and make changes on your branch
 1. Build the plugin, run the tests, and check that the plugin works as intended when installed
