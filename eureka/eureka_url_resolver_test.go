@@ -124,9 +124,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":0}`), 404, nil)
 				})
 				It("should warn that the SCS version might be too old", func() {
-					versionWarning := "The /cli/instance endpoint could not be found.\n" +
-						"This could be because the Spring Cloud Services broker version is too old.\n" +
-						"Please ensure SCS is at least version 1.3.3.\n"
+					versionWarning := "The /cli/instance endpoint could not be found.\n"
 
 					Expect(err).To(HaveOccurred())
 					Expect(err).To(MatchError(versionWarning))
