@@ -1,6 +1,8 @@
 #!/bin/bash
 
-set -x
+if [ ! -z ${DEBUG} ]; then
+    set -x
+fi
 
 declare -a SCS_COMMANDS=("service-registry-info" "service-registry-list" "service-registry-deregister")
 CMD_DOC_FILENAME=cli.md
