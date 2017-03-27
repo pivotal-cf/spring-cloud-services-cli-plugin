@@ -24,6 +24,8 @@ import (
 
 	"fmt"
 
+	"io/ioutil"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -49,7 +51,7 @@ var _ = Describe("Deregister", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString("https://fake.com"), 200, nil)
+		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
 		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
@@ -136,7 +138,7 @@ var _ = Describe("Deregister", func() {
 						return append(apps, app1), nil
 					}
 
-					fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -155,7 +157,7 @@ var _ = Describe("Deregister", func() {
 							 }
 						      ]
 						   }
-						}`), 200, nil)
+						}`)), 200, nil)
 
 				})
 
@@ -167,7 +169,7 @@ var _ = Describe("Deregister", func() {
 
 					BeforeEach(func() {
 
-						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -203,7 +205,7 @@ var _ = Describe("Deregister", func() {
 							 }
 						      ]
 						   }
-						}`), 200, nil)
+						}`)), 200, nil)
 
 					})
 					It("should not deregister the service with a missing guid", func() {
@@ -250,7 +252,7 @@ var _ = Describe("Deregister", func() {
 							}
 							return append(apps, app1), nil
 						}
-						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -287,7 +289,7 @@ var _ = Describe("Deregister", func() {
 							 }
 						      ]
 						   }
-						}`), 200, nil)
+						}`)), 200, nil)
 
 						//Set the instance index argument
 						var idx = 1
@@ -311,7 +313,6 @@ var _ = Describe("Deregister", func() {
 					})
 
 					Context("when an incorrect instance index is specified", func() {
-
 						BeforeEach(func() {
 							var idx = 99
 							instanceIndex = &idx

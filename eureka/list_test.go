@@ -21,6 +21,8 @@ import (
 
 	"bytes"
 
+	"io/ioutil"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -44,7 +46,7 @@ var _ = Describe("Service Registry List", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString("https://fake.com"), 200, nil)
+		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
 		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
@@ -118,7 +120,7 @@ var _ = Describe("Service Registry List", func() {
 			Context("and the eureka dashboard URL can be resolved", func() {
 				Context("but eureka cannot be contacted", func() {
 					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"authenticated":true}`), 200, errors.New("some error"))
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"authenticated":true}`)), 200, errors.New("some error"))
 					})
 
 					It("should return a suitable error", func() {
@@ -130,7 +132,7 @@ var _ = Describe("Service Registry List", func() {
 				Context("and eureka responds", func() {
 					Context("but the response body contains invalid JSON", func() {
 						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(""), 200, nil)
+							fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("")), 200, nil)
 						})
 
 						It("should return a suitable error", func() {
@@ -141,7 +143,7 @@ var _ = Describe("Service Registry List", func() {
 
 					Context("and the response is valid", func() {
 						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+							fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -182,17 +184,17 @@ var _ = Describe("Service Registry List", func() {
          }
       ]
    }
-}`), 200, nil)
+}`)), 200, nil)
 						})
 
 						Context("but no applications are registered", func() {
 							BeforeEach(func() {
-								fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+								fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
        "application":[]
    }
-}`), 200, nil)
+}`)), 200, nil)
 							})
 
 							It("should not return an error", func() {
@@ -208,7 +210,7 @@ var _ = Describe("Service Registry List", func() {
 						Context("but the cf app name cannot be determined", func() {
 							Context("because the cf app GUID is not present in the registered metadata", func() {
 								BeforeEach(func() {
-									fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+									fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -225,7 +227,7 @@ var _ = Describe("Service Registry List", func() {
          }
       ]
    }
-}`), 200, nil)
+}`)), 200, nil)
 								})
 
 								It("should not return an error", func() {
@@ -242,7 +244,7 @@ var _ = Describe("Service Registry List", func() {
 
 							Context("because the app does not exist in cloud foundry", func() {
 								BeforeEach(func() {
-									fakeAuthClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`
+									fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -260,7 +262,7 @@ var _ = Describe("Service Registry List", func() {
          }
       ]
    }
-}`), 200, nil)
+}`)), 200, nil)
 								})
 
 								It("should return a suitable error", func() {

@@ -20,7 +20,7 @@ import "fmt"
 import "code.cloudfoundry.org/cli/cf/flags"
 
 const (
-	SkipSslValidationUsage = "Skip verification of the service registry dashboard endpoint. Not recommended!"
+	SkipSslValidationUsage = "Skip verification of the service endpoint. Not recommended!"
 	CfInstanceIndexUsage   = "Deregister a specific instance in the Eureka registry. The instance index number can be found by using the the service-registry-list command."
 )
 

@@ -79,7 +79,8 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 }
 
 func deregister(authClient httpclient.AuthenticatedClient, accessToken string, eureka string, eurekaAppName string, instanceId string) error {
-	return authClient.DoAuthenticatedDelete(eureka+fmt.Sprintf("eureka/apps/%s/%s", eurekaAppName, instanceId), accessToken)
+	_, err := authClient.DoAuthenticatedDelete(eureka+fmt.Sprintf("eureka/apps/%s/%s", eurekaAppName, instanceId), accessToken)
+	return err
 }
 
 func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
