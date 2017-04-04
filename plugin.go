@@ -23,6 +23,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cli"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
@@ -47,6 +48,13 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	authClient := httpclient.NewAuthenticatedClient(client)
 
 	switch args[0] {
+
+	case "config-server-encrypt-value":
+		configServerInstanceName := getConfigServerInstanceName(positionalArgs, args[0])
+		plainText := getPlainText(positionalArgs, args[0])
+		runActionQuietly(cliConnection, func() (string, error) {
+			return config.Encrypt(cliConnection, configServerInstanceName, plainText, authClient)
+		})
 
 	case "service-registry-deregister":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
@@ -80,6 +88,21 @@ func getCfApplicationName(args []string, operation string) string {
 	return args[2]
 }
 
+func getConfigServerInstanceName(args []string, operation string) string {
+	if len(args) < 2 || args[1] == "" {
+		diagnoseWithHelp("Configuration server instance name not specified.", operation)
+	}
+	return args[1]
+
+}
+
+func getPlainText(args []string, operation string) string {
+	if len(args) < 3 || args[2] == "" {
+		diagnoseWithHelp("string to encrypt not specified.", operation)
+	}
+	return args[2]
+}
+
 func getServiceRegistryInstanceName(args []string, operation string) string {
 	if len(args) < 2 || args[1] == "" {
 		diagnoseWithHelp("Service registry instance name not specified.", operation)
@@ -90,6 +113,12 @@ func getServiceRegistryInstanceName(args []string, operation string) string {
 
 func runAction(cliConnection plugin.CliConnection, message string, action func() (string, error)) {
 	format.RunAction(cliConnection, message, action, os.Stdout, func() {
+		os.Exit(1)
+	})
+}
+
+func runActionQuietly(cliConnection plugin.CliConnection, action func() (string, error)) {
+	format.RunActionQuietly(cliConnection, action, os.Stdout, func() {
 		os.Exit(1)
 	})
 }
@@ -113,6 +142,15 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 			Build: 0,
 		},
 		Commands: []plugin.Command{
+			{
+				Name:     "config-server-encrypt-value",
+				HelpText: "Encrypt a string using a Spring Cloud Services configuration server",
+				Alias:    "csev",
+				UsageDetails: plugin.Usage{
+					Usage:   "   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT",
+					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage},
+				},
+			},
 			{
 				Name:     "service-registry-deregister",
 				HelpText: "Deregister an application registered with a Spring Cloud Services service registry",

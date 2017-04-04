@@ -43,6 +43,16 @@ func RunAction(cliConnection plugin.CliConnection, message string, action func()
 	fmt.Fprintf(writer, "%s\n\n%s", Bold(Green("OK")), output)
 }
 
+// Run a given action writing the output to the given writer and invoking a failure closure if an error occurs.
+func RunActionQuietly(cliConnection plugin.CliConnection, action func() (string, error), writer io.Writer, onFailure func()) {
+	output, err := action()
+	if err != nil {
+		Diagnose(err.Error(), writer, onFailure)
+		return
+	}
+	fmt.Fprintln(writer, output)
+}
+
 func printStartAction(cliConnection plugin.CliConnection, message string, writer io.Writer) {
 	orgModel, err := cliConnection.GetCurrentOrg()
 	if err != nil {

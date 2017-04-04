@@ -22,6 +22,10 @@ import (
 
 	"errors"
 
+	"io/ioutil"
+
+	"net/http"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
@@ -56,15 +60,23 @@ func getRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient
 
 func getAllRegisteredApps(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string) ([]eurekaAppRecord, error) {
 	registeredApps := []eurekaAppRecord{}
-	buf, _, err := authClient.DoAuthenticatedGet(eurekaUrl+"eureka/apps", accessToken)
+	bodyReader, statusCode, err := authClient.DoAuthenticatedGet(eurekaUrl+"eureka/apps", accessToken)
 	if err != nil {
 		return registeredApps, fmt.Errorf("Service registry error: %s", err)
 	}
+	if statusCode != http.StatusOK {
+		return registeredApps, fmt.Errorf("Service registry failed: %d", statusCode)
+	}
+
+	body, err := ioutil.ReadAll(bodyReader)
+	if err != nil {
+		return registeredApps, fmt.Errorf("Cannot read service registry response body: %s", err)
+	}
 
 	var listResp ListResp
-	err = json.Unmarshal(buf.Bytes(), &listResp)
+	err = json.Unmarshal(body, &listResp)
 	if err != nil {
-		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(buf.Bytes()))
+		return registeredApps, fmt.Errorf("Invalid service registry response JSON: %s, response body: '%s'", err, string(body))
 	}
 
 	cfApps, err := cliConnection.GetApps()

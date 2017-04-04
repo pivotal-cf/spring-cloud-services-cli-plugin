@@ -23,6 +23,10 @@ import (
 	"net/url"
 	"strings"
 
+	"io/ioutil"
+
+	"net/http"
+
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
@@ -41,10 +45,10 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 
 	parsedUrl.Path = "/cli/instance/" + guid
 
-	buffer, statusCode, err := authClient.DoAuthenticatedGet(parsedUrl.String(), accessToken)
+	bodyReader, statusCode, err := authClient.DoAuthenticatedGet(parsedUrl.String(), accessToken)
 
 	//In the case of a 404, the most likely cause is that the CLI version is greater than the broker version.
-	if statusCode == 404 {
+	if statusCode == http.StatusNotFound {
 		return "", errors.New("The /cli/instance endpoint could not be found.\n" +
 			"This could be because the Spring Cloud Services broker version is too old.\n" +
 			"Please ensure SCS is at least version 1.3.3.\n")
@@ -53,17 +57,19 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 	if err != nil {
 		return "", fmt.Errorf("Invalid service registry definition response: %s", err)
 	}
-	if buffer == nil {
-		return "", errors.New("Buffer is nil")
+
+	body, err := ioutil.ReadAll(bodyReader)
+	if err != nil {
+		return "", fmt.Errorf("Cannot read service registry definition response body: %s", err)
 	}
 
-	err = json.Unmarshal(buffer.Bytes(), &serviceDefinitionResp)
+	err = json.Unmarshal(body, &serviceDefinitionResp)
 	if serviceDefinitionResp.Credentials.Uri == "" {
-		return "", fmt.Errorf("Invalid service registry definition response JSON: %s, response body: '%s'", err, string(buffer.Bytes()))
+		return "", fmt.Errorf("Invalid service registry definition response JSON: %s, response body: '%s'", err, string(body))
 
 	}
 	if err != nil {
-		return "", fmt.Errorf("JSON reponse contained empty property 'credentials.url': %s", string(buffer.Bytes()))
+		return "", fmt.Errorf("JSON reponse contained empty property 'credentials.url': %s", string(body))
 	}
 	return serviceDefinitionResp.Credentials.Uri + "/", nil
 }

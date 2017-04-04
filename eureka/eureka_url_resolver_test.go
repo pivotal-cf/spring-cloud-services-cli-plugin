@@ -21,6 +21,8 @@ import (
 
 	"bytes"
 
+	"io/ioutil"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
@@ -86,20 +88,9 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 		})
 
 		Context("when eureka can be contacted", func() {
-			Context("but the returned buffer is nil", func() {
-				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(nil, 200, nil)
-				})
-
-				It("should return a suitable error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("Buffer is nil"))
-				})
-			})
-
 			Context("but the response body contains invalid JSON", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(""), 200, nil)
+					authClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("")), 200, nil)
 				})
 
 				It("should return a suitable error", func() {
@@ -110,7 +101,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("but the response body has the wrong content", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":0}`), 200, nil)
+					authClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"credentials":0}`)), 200, nil)
 				})
 
 				It("should return a suitable error", func() {
@@ -121,7 +112,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("but the '/cli/instance endpoint cannot be found", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":0}`), 404, nil)
+					authClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"credentials":0}`)), 404, nil)
 				})
 				It("should warn that the SCS version might be too old", func() {
 					versionWarning := "The /cli/instance endpoint could not be found.\n" +
@@ -135,7 +126,7 @@ var _ = Describe("eurekaUrlFromDashboardUrl", func() {
 
 			Context("and the response body has the correct content", func() {
 				BeforeEach(func() {
-					authClient.DoAuthenticatedGetReturns(bytes.NewBufferString(`{"credentials":{"uri":"https://eurekadashboardurl"}}`), 200, nil)
+					authClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"credentials":{"uri":"https://eurekadashboardurl"}}`)), 200, nil)
 				})
 
 				It("should return a suitable error", func() {

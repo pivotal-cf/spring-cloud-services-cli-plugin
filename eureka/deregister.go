@@ -61,7 +61,7 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 		}
 		if err != nil {
-			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+			return "", fmt.Errorf("Error deregistering service instance: %s", err)
 		}
 	} else { //Instance ID provided, deregister a single instance
 		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
@@ -72,14 +72,15 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 		statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 
 		if err != nil {
-			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+			return "", fmt.Errorf("Error deregistering service instance: %s", err)
 		}
 	}
 	return statusMessage, nil
 }
 
 func deregister(authClient httpclient.AuthenticatedClient, accessToken string, eureka string, eurekaAppName string, instanceId string) error {
-	return authClient.DoAuthenticatedDelete(eureka+fmt.Sprintf("eureka/apps/%s/%s", eurekaAppName, instanceId), accessToken)
+	_, err := authClient.DoAuthenticatedDelete(eureka+fmt.Sprintf("eureka/apps/%s/%s", eurekaAppName, instanceId), accessToken)
+	return err
 }
 
 func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
