@@ -33,7 +33,7 @@ type serviceKeyInfo struct {
 
 func getServiceKeyInfo(cliConnection plugin.CliConnection, serviceInstance string) (*serviceKeyInfo, error) {
 	serviceKeyInfo := &serviceKeyInfo{}
-	serviceKey, err := serviceKey(cliConnection, serviceInstance)
+	serviceKey, err := serviceKeyName(cliConnection, serviceInstance)
 	if err != nil {
 		return serviceKeyInfo, err
 	}
@@ -52,7 +52,7 @@ func getServiceKeyInfo(cliConnection plugin.CliConnection, serviceInstance strin
 	return serviceKeyInfo, nil
 }
 
-func serviceKey(cliConnection plugin.CliConnection, serviceInstance string) (string, error) {
+func serviceKeyName(cliConnection plugin.CliConnection, serviceInstance string) (string, error) {
 	var serviceKey string
 	op, err := cliConnection.CliCommandWithoutTerminalOutput("service-keys", serviceInstance)
 	if err != nil {
@@ -62,12 +62,12 @@ func serviceKey(cliConnection plugin.CliConnection, serviceInstance string) (str
 		serviceKey = op[3]
 	} else {
 		// The output is not in the expected format, so default the service key.
-		serviceKey = defaultServiceKey(serviceInstance)
+		serviceKey = defaultServiceKeyName(serviceInstance)
 	}
 	return serviceKey, nil
 }
 
-func defaultServiceKey(serviceInstance string) string {
+func defaultServiceKeyName(serviceInstance string) string {
 	return serviceInstance + "-key"
 }
 
