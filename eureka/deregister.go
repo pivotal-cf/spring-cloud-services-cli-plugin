@@ -61,7 +61,7 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 		}
 		if err != nil {
-			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+			return "", fmt.Errorf("Error deregistering service instance: %s", err)
 		}
 	} else { //Instance ID provided, deregister a single instance
 		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
@@ -72,7 +72,7 @@ func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName s
 		statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 
 		if err != nil {
-			return "", fmt.Errorf("Error deregistering service instance: %s \n", err)
+			return "", fmt.Errorf("Error deregistering service instance: %s", err)
 		}
 	}
 	return statusMessage, nil

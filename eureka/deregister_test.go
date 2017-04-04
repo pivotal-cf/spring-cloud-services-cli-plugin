@@ -26,6 +26,8 @@ import (
 
 	"io/ioutil"
 
+	"net/http"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -123,8 +125,12 @@ var _ = Describe("Deregister", func() {
 			})
 
 			Context("the cf app can be resolved", func() {
+				var (
+					testErr error
+				)
 
 				BeforeEach(func() {
+					testErr = errors.New("failed")
 					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 						return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid", nil
 					}
@@ -165,8 +171,38 @@ var _ = Describe("Deregister", func() {
 					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
 				})
 
-				Context("but only two out of three eureka instance names can be resolved", func() {
+				Context("when deregistering the service fails", func() {
+					BeforeEach(func() {
+						fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
+					})
 
+					It("should return the error", func() {
+						Expect(err.Error()).To(ContainSubstring("Error deregistering service instance: failed"))
+					})
+				})
+
+				Context("when obtaining the application instances from the service registry fails", func() {
+					BeforeEach(func() {
+						testErr = errors.New("failed")
+						fakeAuthClient.DoAuthenticatedGetReturns(nil, 0, testErr)
+					})
+
+					It("should return the error", func() {
+						Expect(err.Error()).To(ContainSubstring("Service registry error: failed"))
+					})
+				})
+
+				Context("when obtaining the application instances from the service registry returns a bad status code", func() {
+					BeforeEach(func() {
+						fakeAuthClient.DoAuthenticatedGetReturns(nil, http.StatusNotFound, nil)
+					})
+
+					It("should return the error", func() {
+						Expect(err.Error()).To(ContainSubstring("Service registry failed: 404"))
+					})
+				})
+
+				Context("but only two out of three eureka instance names can be resolved", func() {
 					BeforeEach(func() {
 
 						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
@@ -312,6 +348,16 @@ var _ = Describe("Deregister", func() {
 						Expect(output).To(ContainSubstring(line1))
 					})
 
+					Context("when deleting the registration fails", func() {
+						BeforeEach(func() {
+							fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
+						})
+
+						It("should return a suitable error", func() {
+							Expect(err).To(MatchError("Error deregistering service instance: failed"))
+						})
+					})
+
 					Context("when an incorrect instance index is specified", func() {
 						BeforeEach(func() {
 							var idx = 99
@@ -322,6 +368,47 @@ var _ = Describe("Deregister", func() {
 							Expect(err).To(HaveOccurred())
 							Expect(err).To(MatchError("No instance found with index 99"))
 						})
+					})
+				})
+
+				Context("when an invalid instance index is returned in the metadata", func() {
+					BeforeEach(func() {
+						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+							apps := []plugin_models.GetAppsModel{}
+							app1 := plugin_models.GetAppsModel{
+								Name: "some-cf-app",
+								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
+							}
+							return append(apps, app1), nil
+						}
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+						{
+						   "applications":{
+						      "application":[
+							 {
+							    "instance":[
+							       {
+								  "app":"APP-1",
+								  "status":"UP",
+								  "metadata":{
+								     "zone":"zone-a",
+								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+								     "cfInstanceIndex":"bad-integer"
+								  }
+							       }
+							    ]
+							 }
+						      ]
+						   }
+						}`)), 200, nil)
+
+						//Set the instance index argument
+						var idx = 1
+						instanceIndex = &idx
+					})
+
+					It("should raise a suitable error", func() {
+						Expect(err.Error()).To(ContainSubstring(`parsing "bad-integer": invalid syntax`))
 					})
 				})
 			})
