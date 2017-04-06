@@ -3,17 +3,17 @@ package config_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"io"
 
+	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
@@ -21,33 +21,29 @@ var _ = Describe("Encrypt", func() {
 
 	const (
 		serviceRegistryInstance = "some-service-registry"
-		serviceRegistryKey      = "some-service-registry-key"
 		plainText               = "plain-text"
 		errorText               = "to err is human"
-		statusMessage           = "server error"
-		serviceKey              = "somekey"
 		accessToken             = "access-token"
-		serviceURI              = "service-uri"
+		bearerAccessToken       = "bearer " + accessToken
+		serviceURI              = "service-uri/"
 		encryptURI              = "service-uri/encrypt"
 		cipherText              = "cipher-text"
 	)
 
 	var (
-		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		testError         error
-		postResponse      io.ReadCloser
-		postStatusCode    int
-		postErr           error
-		output            string
-		err               error
-		serviceKeysOutput []string
-		serviceKeysErr    error
-		serviceKeyOutput  []string
-		serviceKeyErr     error
-		accessTokenURI    string
-		clientID          string
-		clientSecret      string
+		fakeCliConnection     *pluginfakes.FakeCliConnection
+		fakeAuthClient        *httpclientfakes.FakeAuthenticatedClient
+		fakeResolver          func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
+		resolverAccessToken   string
+		testError             error
+		postResponse          io.ReadCloser
+		postStatusCode        int
+		postErr               error
+		output                string
+		err                   error
+		accessTokenURI        string
+		fakeResolverCallCount int
+		fakeResolverError     error
 	)
 
 	BeforeEach(func() {
@@ -55,119 +51,53 @@ var _ = Describe("Encrypt", func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		testError = errors.New(errorText)
 		postResponse, postStatusCode, postErr = ioutil.NopCloser(bytes.NewBufferString(cipherText)), http.StatusOK, nil
-		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
-		serviceKeysOutput, serviceKeysErr = []string{"", "", "", serviceKey}, nil
 		accessTokenURI = "access-token-uri"
-		clientID = "client-id"
-		clientSecret = "client-secret"
-		serviceKeyOutput, serviceKeyErr = strings.Split(fmt.Sprintf(`Getting key ...
-
-{
- "access_token_uri": "%s",
- "client_id": "%s",
- "client_secret": "%s",
- "uri": "%s"
-}`, accessTokenURI, clientID, clientSecret, serviceURI), "\n"), nil
-		fakeAuthClient.GetClientCredentialsAccessTokenReturns(accessToken, nil)
+		fakeCliConnection.AccessTokenReturns(bearerAccessToken, nil)
+		fakeResolverCallCount = 0
+		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+			fakeResolverCallCount++
+			resolverAccessToken = accessToken
+			return serviceURI, fakeResolverError
+		}
+		fakeResolverError = nil
 	})
 
 	JustBeforeEach(func() {
 		fakeAuthClient.DoAuthenticatedPostReturns(postResponse, postStatusCode, postErr)
-		fakeCliConnection.CliCommandWithoutTerminalOutputStub = func(args ...string) ([]string, error) {
-			switch args[0] {
-			case "service-keys":
-				return serviceKeysOutput, serviceKeysErr
-			case "service-key":
-				return serviceKeyOutput, serviceKeyErr
-			default:
-				Fail("stub detected unexpected cf operation")
-				return []string{}, nil
-			}
-		}
-
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, plainText, fakeAuthClient)
+		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, plainText, fakeAuthClient, fakeResolver)
 	})
 
-	It("should obtain the service keys associated with the service instance", func() {
-		Expect(fakeCliConnection.CliCommandWithoutTerminalOutputCallCount()).To(Equal(2))
-		args := fakeCliConnection.CliCommandWithoutTerminalOutputArgsForCall(0)
-		Expect(args).To(Equal([]string{"service-keys", serviceRegistryInstance}))
+	It("should create an access token", func() {
+		Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
 	})
 
-	Context("when obtaining the service keys fails", func() {
+	Context("when the access token is not available", func() {
 		BeforeEach(func() {
-			serviceKeysOutput, serviceKeysErr = []string{}, testError
-		})
-
-		It("should propagate the error", func() {
-			Expect(err.Error()).To(ContainSubstring(errorText))
-		})
-	})
-
-	Context("when obtaining the service keys returns unexpected output", func() {
-		BeforeEach(func() {
-			serviceKeysOutput, serviceKeysErr = []string{}, nil
-		})
-
-		It("should use the default value of the service key", func() {
-			Expect(fakeCliConnection.CliCommandWithoutTerminalOutputCallCount()).To(Equal(2))
-			args := fakeCliConnection.CliCommandWithoutTerminalOutputArgsForCall(1)
-			Expect(args).To(Equal([]string{"service-key", serviceRegistryInstance, serviceRegistryKey}))
-		})
-	})
-
-	It("should use the service key returned by cf service-keys", func() {
-		Expect(fakeCliConnection.CliCommandWithoutTerminalOutputCallCount()).To(Equal(2))
-		args := fakeCliConnection.CliCommandWithoutTerminalOutputArgsForCall(1)
-		Expect(args).To(Equal([]string{"service-key", serviceRegistryInstance, serviceKey}))
-	})
-
-	Context("when obtaining the service key information fails", func() {
-		BeforeEach(func() {
-			serviceKeyOutput, serviceKeyErr = []string{}, testError
-
-		})
-
-		It("should propagate the error", func() {
-			Expect(err.Error()).To(ContainSubstring(errorText))
-		})
-	})
-
-	Context("when the service key information has too few lines", func() {
-		BeforeEach(func() {
-			serviceKeyOutput, serviceKeyErr = []string{}, nil
+			fakeCliConnection.AccessTokenReturns("", errors.New("some access token error"))
 		})
 
 		It("should return a suitable error", func() {
-			Expect(err).To(MatchError("Malformed service key info: []"))
+			Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError("Access token not available: some access token error"))
 		})
 	})
 
-	Context("when the service key information contains invalid JSON", func() {
+	It("should call the service instance resolver", func() {
+		Expect(fakeResolverCallCount).To(Equal(1))
+	})
+
+	It("should pass the access token to the resolver", func() {
+		Expect(resolverAccessToken).To(Equal(accessToken))
+	})
+
+	Context("when the service instance resolver fails", func() {
 		BeforeEach(func() {
-			serviceKeyOutput, serviceKeyErr = []string{"", "", ""}, nil
-		})
-
-		It("should return a suitable error", func() {
-			Expect(err.Error()).To(ContainSubstring("Failed to unmarshal service key info:"))
-		})
-	})
-
-	It("should create an access token using the correct parameters", func() {
-		Expect(fakeAuthClient.GetClientCredentialsAccessTokenCallCount()).To(Equal(1))
-		uri, id, secret := fakeAuthClient.GetClientCredentialsAccessTokenArgsForCall(0)
-		Expect(uri).To(Equal(accessTokenURI))
-		Expect(id).To(Equal(clientID))
-		Expect(secret).To(Equal(clientSecret))
-	})
-
-	Context("when creating an access token fails", func() {
-		BeforeEach(func() {
-			fakeAuthClient.GetClientCredentialsAccessTokenReturns("", testError)
+			fakeResolverError = testError
 		})
 
 		It("should propagate the error", func() {
-			Expect(err.Error()).To(ContainSubstring(errorText))
+			Expect(err).To(MatchError("Error obtaining config server URL: " + errorText))
 		})
 	})
 

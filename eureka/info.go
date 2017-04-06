@@ -25,7 +25,9 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
 type Peer struct {
@@ -40,23 +42,19 @@ type InfoResp struct {
 }
 
 func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
-	return InfoWithResolver(cliConnection, client, srInstanceName, authClient, EurekaUrlFromDashboardUrl)
+	return InfoWithResolver(cliConnection, client, srInstanceName, authClient, serviceutil.ServiceInstanceURL)
 }
 
 func InfoWithResolver(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient,
-	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
-	serviceModel, err := cliConnection.GetService(srInstanceName)
+	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
-		return "", fmt.Errorf("Service registry instance not found: %s", err)
+		return "", err
 	}
-	accessToken, err := cliConnection.AccessToken()
+
+	eureka, err := serviceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
 	if err != nil {
-		return "", fmt.Errorf("Access token not available: %s", err)
-	}
-	dashboardUrl := serviceModel.DashboardUrl
-	eureka, err := eurekaUrlFromDashboardUrl(dashboardUrl, accessToken, authClient)
-	if err != nil {
-		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
+		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}
 
 	req, err := http.NewRequest("GET", eureka+"info", nil)

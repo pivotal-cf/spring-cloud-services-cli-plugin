@@ -17,17 +17,13 @@
 package eureka_test
 
 import (
-	//"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
-
 	"bytes"
 	"errors"
-
 	"fmt"
-
 	"io/ioutil"
-
 	"net/http"
 
+	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -40,21 +36,24 @@ import (
 
 var _ = Describe("Deregister", func() {
 
+	const testAccessToken = "someaccesstoken"
+
 	var (
-		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		getServiceModel   plugin_models.GetService_Model
-		output            string
-		err               error
-		instanceIndex     *int
+		fakeCliConnection   *pluginfakes.FakeCliConnection
+		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
+		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
+		resolverAccessToken string
+		output              string
+		err                 error
+		instanceIndex       *int
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
-		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+		resolverAccessToken = ""
+		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
 	})
@@ -63,88 +62,61 @@ var _ = Describe("Deregister", func() {
 		output, err = eureka.DeregisterWithResolver(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, fakeResolver)
 	})
 
-	Context("when the service is not found", func() {
+	It("should attempt to obtain an access token", func() {
+		Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
+	})
+
+	Context("when the access token is not available", func() {
 		BeforeEach(func() {
-			fakeCliConnection.GetServiceReturns(getServiceModel, errors.New("some error"))
+			fakeCliConnection.AccessTokenReturns("", errors.New("some access token error"))
 		})
 
 		It("should return a suitable error", func() {
-			Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
-			Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal("some-service-registry"))
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("Service registry instance not found: some error"))
+			Expect(err).To(MatchError("Access token not available: some access token error"))
 		})
 	})
 
-	Context("when the service is found", func() {
+	Context("when the access token is available", func() {
 		BeforeEach(func() {
-			getServiceModel.DashboardUrl = "https://spring-cloud-broker.some.host.name/x/y/z/some-guid"
-			fakeCliConnection.GetServiceReturns(getServiceModel, nil)
+			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
 		})
 
-		Context("but the access token is not available", func() {
-			var accessTokenCallCount int
-
+		Context("but the eureka URL cannot be resolved", func() {
 			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "", errors.New("some access token error")
+				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+					return "", errors.New("resolution error")
 				}
 			})
 
 			It("should return a suitable error", func() {
-				Expect(accessTokenCallCount).To(Equal(1))
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Access token not available: some access token error"))
+				Expect(err).To(MatchError("Error obtaining service registry URL: resolution error"))
 			})
 		})
 
-		Context("and the access token is available", func() {
-			var accessTokenCallCount int
+		Context("when the eureka URL can be resolved", func() {
+			var (
+				testErr error
+			)
 
 			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "someaccesstoken", nil
+				testErr = errors.New("failed")
+				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+					resolverAccessToken = accessToken
+					return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid/", nil
 				}
-			})
 
-			Context("but the eureka dashboard URL cannot be resolved", func() {
-				BeforeEach(func() {
-					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-						return "", errors.New("resolution error")
+				fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+					apps := []plugin_models.GetAppsModel{}
+					app1 := plugin_models.GetAppsModel{
+						Name: "some-cf-app",
+						Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 					}
-				})
+					return append(apps, app1), nil
+				}
 
-				It("should return a suitable error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("Error obtaining service registry dashboard URL: resolution error"))
-				})
-			})
-
-			Context("the cf app can be resolved", func() {
-				var (
-					testErr error
-				)
-
-				BeforeEach(func() {
-					testErr = errors.New("failed")
-					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-						return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid", nil
-					}
-
-					fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
-						apps := []plugin_models.GetAppsModel{}
-						app1 := plugin_models.GetAppsModel{
-							Name: "some-cf-app",
-							Guid: "062bd505-8b19-44ca-4451-4a932932143a",
-						}
-						return append(apps, app1), nil
-					}
-
-					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+				fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -165,47 +137,57 @@ var _ = Describe("Deregister", func() {
 						   }
 						}`)), 200, nil)
 
+			})
+
+			It("should pass the access token to the resolver", func() {
+				Expect(resolverAccessToken).To(Equal(testAccessToken))
+			})
+
+			It("should pass the access token to the GET request", func() {
+				url, tok := fakeAuthClient.DoAuthenticatedGetArgsForCall(0)
+				Expect(url).To(Equal("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/eureka/apps"))
+				Expect(tok).To(Equal(testAccessToken))
+			})
+
+			It("should successfully deregister the service", func() {
+				Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+			})
+
+			Context("when deregistering the service fails", func() {
+				BeforeEach(func() {
+					fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
 				})
 
-				It("should successfully deregister the service", func() {
-					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+				It("should return the error", func() {
+					Expect(err.Error()).To(ContainSubstring("Error deregistering service instance: failed"))
+				})
+			})
+
+			Context("when obtaining the application instances from the service registry fails", func() {
+				BeforeEach(func() {
+					testErr = errors.New("failed")
+					fakeAuthClient.DoAuthenticatedGetReturns(nil, 0, testErr)
 				})
 
-				Context("when deregistering the service fails", func() {
-					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
-					})
+				It("should return the error", func() {
+					Expect(err.Error()).To(ContainSubstring("Service registry error: failed"))
+				})
+			})
 
-					It("should return the error", func() {
-						Expect(err.Error()).To(ContainSubstring("Error deregistering service instance: failed"))
-					})
+			Context("when obtaining the application instances from the service registry returns a bad status code", func() {
+				BeforeEach(func() {
+					fakeAuthClient.DoAuthenticatedGetReturns(nil, http.StatusNotFound, nil)
 				})
 
-				Context("when obtaining the application instances from the service registry fails", func() {
-					BeforeEach(func() {
-						testErr = errors.New("failed")
-						fakeAuthClient.DoAuthenticatedGetReturns(nil, 0, testErr)
-					})
-
-					It("should return the error", func() {
-						Expect(err.Error()).To(ContainSubstring("Service registry error: failed"))
-					})
+				It("should return the error", func() {
+					Expect(err.Error()).To(ContainSubstring("Service registry failed: 404"))
 				})
+			})
 
-				Context("when obtaining the application instances from the service registry returns a bad status code", func() {
-					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedGetReturns(nil, http.StatusNotFound, nil)
-					})
+			Context("but only two out of three eureka instance names can be resolved", func() {
+				BeforeEach(func() {
 
-					It("should return the error", func() {
-						Expect(err.Error()).To(ContainSubstring("Service registry failed: 404"))
-					})
-				})
-
-				Context("but only two out of three eureka instance names can be resolved", func() {
-					BeforeEach(func() {
-
-						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -243,52 +225,52 @@ var _ = Describe("Deregister", func() {
 						   }
 						}`)), 200, nil)
 
-					})
-					It("should not deregister the service with a missing guid", func() {
-						Expect(err).ToNot(HaveOccurred())
-						Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
-					})
-
-					It("should inform the user that 2 instances have been deregistered", func() {
-						template := "Deregistered service instance %s with index %s\n"
-						line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
-						line2 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-3")), format.Bold(format.Cyan("3")))
-
-						Expect(output).To(Not(BeEmpty()))
-						Expect(output).To(ContainSubstring(line1 + line2))
-					})
+				})
+				It("should not deregister the service with a missing guid", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
 				})
 
-				Context("but the cf app name cannot be found", func() {
+				It("should inform the user that 2 instances have been deregistered", func() {
+					template := "Deregistered service instance %s with index %s\n"
+					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
+					line2 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-3")), format.Bold(format.Cyan("3")))
 
-					BeforeEach(func() {
-						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
-							apps := []plugin_models.GetAppsModel{}
-							app1 := plugin_models.GetAppsModel{
-								Name: "unknown-app",
-								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
-							}
-							return append(apps, app1), nil
+					Expect(output).To(Not(BeEmpty()))
+					Expect(output).To(ContainSubstring(line1 + line2))
+				})
+			})
+
+			Context("but the cf app name cannot be found", func() {
+
+				BeforeEach(func() {
+					fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+						apps := []plugin_models.GetAppsModel{}
+						app1 := plugin_models.GetAppsModel{
+							Name: "unknown-app",
+							Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 						}
-					})
-
-					It("should return a suitable error", func() {
-						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("cf app name some-cf-app not found"))
-					})
+						return append(apps, app1), nil
+					}
 				})
 
-				Context("when an instance index is specified", func() {
-					BeforeEach(func() {
-						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
-							apps := []plugin_models.GetAppsModel{}
-							app1 := plugin_models.GetAppsModel{
-								Name: "some-cf-app",
-								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
-							}
-							return append(apps, app1), nil
+				It("should return a suitable error", func() {
+					Expect(err).To(HaveOccurred())
+					Expect(err).To(MatchError("cf app name some-cf-app not found"))
+				})
+			})
+
+			Context("when an instance index is specified", func() {
+				BeforeEach(func() {
+					fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+						apps := []plugin_models.GetAppsModel{}
+						app1 := plugin_models.GetAppsModel{
+							Name: "some-cf-app",
+							Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 						}
-						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+						return append(apps, app1), nil
+					}
+					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -327,61 +309,61 @@ var _ = Describe("Deregister", func() {
 						   }
 						}`)), 200, nil)
 
-						//Set the instance index argument
-						var idx = 1
-						instanceIndex = &idx
+					//Set the instance index argument
+					var idx = 1
+					instanceIndex = &idx
+				})
+
+				It("should not raise an error", func() {
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("should only call the deregister function once", func() {
+					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+				})
+
+				It("should inform the user about the instance deregistration", func() {
+					template := "Deregistered service instance %s with index %s\n"
+					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
+
+					Expect(output).To(Not(BeEmpty()))
+					Expect(output).To(ContainSubstring(line1))
+				})
+
+				Context("when deleting the registration fails", func() {
+					BeforeEach(func() {
+						fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
 					})
 
-					It("should not raise an error", func() {
-						Expect(err).ToNot(HaveOccurred())
-					})
-
-					It("should only call the deregister function once", func() {
-						Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
-					})
-
-					It("should inform the user about the instance deregistration", func() {
-						template := "Deregistered service instance %s with index %s\n"
-						line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
-
-						Expect(output).To(Not(BeEmpty()))
-						Expect(output).To(ContainSubstring(line1))
-					})
-
-					Context("when deleting the registration fails", func() {
-						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
-						})
-
-						It("should return a suitable error", func() {
-							Expect(err).To(MatchError("Error deregistering service instance: failed"))
-						})
-					})
-
-					Context("when an incorrect instance index is specified", func() {
-						BeforeEach(func() {
-							var idx = 99
-							instanceIndex = &idx
-						})
-
-						It("should return a suitable error", func() {
-							Expect(err).To(HaveOccurred())
-							Expect(err).To(MatchError("No instance found with index 99"))
-						})
+					It("should return a suitable error", func() {
+						Expect(err).To(MatchError("Error deregistering service instance: failed"))
 					})
 				})
 
-				Context("when an invalid instance index is returned in the metadata", func() {
+				Context("when an incorrect instance index is specified", func() {
 					BeforeEach(func() {
-						fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
-							apps := []plugin_models.GetAppsModel{}
-							app1 := plugin_models.GetAppsModel{
-								Name: "some-cf-app",
-								Guid: "062bd505-8b19-44ca-4451-4a932932143a",
-							}
-							return append(apps, app1), nil
+						var idx = 99
+						instanceIndex = &idx
+					})
+
+					It("should return a suitable error", func() {
+						Expect(err).To(HaveOccurred())
+						Expect(err).To(MatchError("No instance found with index 99"))
+					})
+				})
+			})
+
+			Context("when an invalid instance index is returned in the metadata", func() {
+				BeforeEach(func() {
+					fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+						apps := []plugin_models.GetAppsModel{}
+						app1 := plugin_models.GetAppsModel{
+							Name: "some-cf-app",
+							Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 						}
-						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+						return append(apps, app1), nil
+					}
+					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
 						      "application":[
@@ -402,14 +384,13 @@ var _ = Describe("Deregister", func() {
 						   }
 						}`)), 200, nil)
 
-						//Set the instance index argument
-						var idx = 1
-						instanceIndex = &idx
-					})
+					//Set the instance index argument
+					var idx = 1
+					instanceIndex = &idx
+				})
 
-					It("should raise a suitable error", func() {
-						Expect(err.Error()).To(ContainSubstring(`parsing "bad-integer": invalid syntax`))
-					})
+				It("should raise a suitable error", func() {
+					Expect(err.Error()).To(ContainSubstring(`parsing "bad-integer": invalid syntax`))
 				})
 			})
 		})

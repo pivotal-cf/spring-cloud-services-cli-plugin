@@ -20,8 +20,10 @@ import (
 	"fmt"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
 const (
@@ -61,23 +63,19 @@ type SummaryFailure struct {
 }
 
 func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
-	return ListWithResolver(cliConnection, srInstanceName, authClient, EurekaUrlFromDashboardUrl)
+	return ListWithResolver(cliConnection, srInstanceName, authClient, serviceutil.ServiceInstanceURL)
 }
 
 func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient,
-	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
-	serviceModel, err := cliConnection.GetService(srInstanceName)
+	servinceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
-		return "", fmt.Errorf("Service registry instance not found: %s", err)
-	}
-	accessToken, err := cliConnection.AccessToken()
-	if err != nil {
-		return "", fmt.Errorf("Access token not available: %s", err)
+		return "", err
 	}
 
-	eureka, err := eurekaUrlFromDashboardUrl(serviceModel.DashboardUrl, accessToken, authClient)
+	eureka, err := servinceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
 	if err != nil {
-		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
+		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}
 	registeredApps, err := getAllRegisteredApps(cliConnection, authClient, accessToken, eureka)
 

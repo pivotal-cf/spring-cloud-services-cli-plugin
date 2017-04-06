@@ -23,6 +23,7 @@ import (
 
 	"io/ioutil"
 
+	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -34,20 +35,23 @@ import (
 )
 
 var _ = Describe("Service Registry List", func() {
+	const testAccessToken = "someaccesstoken"
+
 	var (
-		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		getServiceModel   plugin_models.GetService_Model
-		output            string
-		err               error
+		fakeCliConnection   *pluginfakes.FakeCliConnection
+		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
+		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
+		resolverAccessToken string
+		output              string
+		err                 error
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
-		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+			resolverAccessToken = accessToken
 			return "https://eureka-dashboard-url/", nil
 		}
 	})
@@ -56,94 +60,66 @@ var _ = Describe("Service Registry List", func() {
 		output, err = eureka.ListWithResolver(fakeCliConnection, "some-service-registry", fakeAuthClient, fakeResolver)
 	})
 
-	Context("when the service is not found", func() {
+	Context("when the access token is not available", func() {
 		BeforeEach(func() {
-			fakeCliConnection.GetServiceReturns(getServiceModel, errors.New("some error"))
+			fakeCliConnection.AccessTokenReturns("", errors.New("some access token error"))
 		})
 
 		It("should return a suitable error", func() {
-			Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
-			Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal("some-service-registry"))
+			Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("Service registry instance not found: some error"))
+			Expect(err).To(MatchError("Access token not available: some access token error"))
 		})
 	})
 
-	Context("when the service is found", func() {
+	Context("when the access token is available", func() {
 		BeforeEach(func() {
-			getServiceModel.DashboardUrl = "https://spring-cloud-broker.some.host.name/x/y/z/some-guid"
-			fakeCliConnection.GetServiceReturns(getServiceModel, nil)
+			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
 		})
 
-		Context("but the access token is not available", func() {
-			var accessTokenCallCount int
-
+		Context("but the eureka dashboard URL cannot be resolved", func() {
 			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "", errors.New("some access token error")
+				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+					return "", errors.New("resolution error")
 				}
 			})
 
 			It("should return a suitable error", func() {
-				Expect(accessTokenCallCount).To(Equal(1))
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Access token not available: some access token error"))
+				Expect(err).To(MatchError("Error obtaining service registry URL: resolution error"))
 			})
 		})
 
-		Context("and the access token is available", func() {
-			var accessTokenCallCount int
-
-			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "someaccesstoken", nil
-				}
+		Context("and the eureka dashboard URL can be resolved", func() {
+			It("should pass the token to the resolver", func() {
+				Expect(resolverAccessToken).To(Equal(testAccessToken))
 			})
-
-			Context("but the eureka dashboard URL cannot be resolved", func() {
+			Context("but eureka cannot be contacted", func() {
 				BeforeEach(func() {
-					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-						return "", errors.New("resolution error")
-					}
+					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"authenticated":true}`)), 200, errors.New("some error"))
 				})
 
 				It("should return a suitable error", func() {
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("Error obtaining service registry dashboard URL: resolution error"))
+					Expect(err).To(MatchError("Service registry error: some error"))
 				})
 			})
 
-			Context("and the eureka dashboard URL can be resolved", func() {
-				Context("but eureka cannot be contacted", func() {
+			Context("and eureka responds", func() {
+				Context("but the response body contains invalid JSON", func() {
 					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`{"authenticated":true}`)), 200, errors.New("some error"))
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("")), 200, nil)
 					})
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("Service registry error: some error"))
+						Expect(err).To(MatchError("Invalid service registry response JSON: unexpected end of JSON input, response body: ''"))
 					})
 				})
 
-				Context("and eureka responds", func() {
-					Context("but the response body contains invalid JSON", func() {
-						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("")), 200, nil)
-						})
-
-						It("should return a suitable error", func() {
-							Expect(err).To(HaveOccurred())
-							Expect(err).To(MatchError("Invalid service registry response JSON: unexpected end of JSON input, response body: ''"))
-						})
-					})
-
-					Context("and the response is valid", func() {
-						BeforeEach(func() {
-							fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+				Context("and the response is valid", func() {
+					BeforeEach(func() {
+						fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -185,32 +161,32 @@ var _ = Describe("Service Registry List", func() {
       ]
    }
 }`)), 200, nil)
-						})
+					})
 
-						Context("but no applications are registered", func() {
-							BeforeEach(func() {
-								fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+					Context("but no applications are registered", func() {
+						BeforeEach(func() {
+							fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
        "application":[]
    }
 }`)), 200, nil)
-							})
-
-							It("should not return an error", func() {
-								Expect(err).NotTo(HaveOccurred())
-							})
-
-							It("should print a suitable message", func() {
-								Expect(output).To(ContainSubstring("No registered applications found"))
-							})
-
 						})
 
-						Context("but the cf app name cannot be determined", func() {
-							Context("because the cf app GUID is not present in the registered metadata", func() {
-								BeforeEach(func() {
-									fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+						It("should not return an error", func() {
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("should print a suitable message", func() {
+							Expect(output).To(ContainSubstring("No registered applications found"))
+						})
+
+					})
+
+					Context("but the cf app name cannot be determined", func() {
+						Context("because the cf app GUID is not present in the registered metadata", func() {
+							BeforeEach(func() {
+								fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -228,23 +204,23 @@ var _ = Describe("Service Registry List", func() {
       ]
    }
 }`)), 200, nil)
-								})
-
-								It("should not return an error", func() {
-									Expect(err).NotTo(HaveOccurred())
-								})
-
-								It("should omit the cf app name and cf instance index", func() {
-									tab := &format.Table{}
-									tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
-									tab.AddRow([]string{"APP-1", "?????", "?", "zone1", "UP"})
-									Expect(output).To(ContainSubstring(tab.String()))
-								})
 							})
 
-							Context("because the app does not exist in cloud foundry", func() {
-								BeforeEach(func() {
-									fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
+							It("should not return an error", func() {
+								Expect(err).NotTo(HaveOccurred())
+							})
+
+							It("should omit the cf app name and cf instance index", func() {
+								tab := &format.Table{}
+								tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
+								tab.AddRow([]string{"APP-1", "?????", "?", "zone1", "UP"})
+								Expect(output).To(ContainSubstring(tab.String()))
+							})
+						})
+
+						Context("because the app does not exist in cloud foundry", func() {
+							BeforeEach(func() {
+								fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 {
    "applications":{
       "application":[
@@ -263,74 +239,73 @@ var _ = Describe("Service Registry List", func() {
       ]
    }
 }`)), 200, nil)
-								})
-
-								It("should return a suitable error", func() {
-									Expect(err).To(HaveOccurred())
-									Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID 'unknown-guid': CF App not found"))
-								})
 							})
 
+							It("should return a suitable error", func() {
+								Expect(err).To(HaveOccurred())
+								Expect(err.Error()).To(HavePrefix("Failed to determine cf app name corresponding to cf app GUID 'unknown-guid': CF App not found"))
+							})
 						})
 
-						Context("and the cf app name can be determined", func() {
+					})
 
-							var (
-								getAppsCallCount int
-							)
+					Context("and the cf app name can be determined", func() {
 
-							BeforeEach(func() {
-								getAppsCallCount = 0
-								fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
-									getAppsCallCount++
-									apps := []plugin_models.GetAppsModel{}
-									app1 := plugin_models.GetAppsModel{
-										Name: "cfapp1",
-										Guid: "062bd505-8b19-44ca-4451-4a932932143a",
-									}
-									app2 := plugin_models.GetAppsModel{
-										Name: "cfapp2",
-										Guid: "162bd505-1b19-14ca-1451-1a9329321431",
-									}
-									return append(apps, app1, app2), nil
+						var (
+							getAppsCallCount int
+						)
+
+						BeforeEach(func() {
+							getAppsCallCount = 0
+							fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
+								getAppsCallCount++
+								apps := []plugin_models.GetAppsModel{}
+								app1 := plugin_models.GetAppsModel{
+									Name: "cfapp1",
+									Guid: "062bd505-8b19-44ca-4451-4a932932143a",
 								}
-							})
+								app2 := plugin_models.GetAppsModel{
+									Name: "cfapp2",
+									Guid: "162bd505-1b19-14ca-1451-1a9329321431",
+								}
+								return append(apps, app1, app2), nil
+							}
+						})
 
-							It("should have obtained an access token", func() {
-								Expect(accessTokenCallCount).To(Equal(1))
-							})
+						It("should have obtained an access token", func() {
+							Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
+						})
 
-							It("should have sent a request to the correct URL with the correct access token", func() {
-								Expect(fakeAuthClient.DoAuthenticatedGetCallCount()).To(Equal(1))
-								url, accessToken := fakeAuthClient.DoAuthenticatedGetArgsForCall(0)
-								Expect(url).To(Equal("https://eureka-dashboard-url/eureka/apps"))
-								Expect(accessToken).To(Equal("someaccesstoken"))
-							})
+						It("should have sent a request to the correct URL with the correct access token", func() {
+							Expect(fakeAuthClient.DoAuthenticatedGetCallCount()).To(Equal(1))
+							url, accessToken := fakeAuthClient.DoAuthenticatedGetArgsForCall(0)
+							Expect(url).To(Equal("https://eureka-dashboard-url/eureka/apps"))
+							Expect(accessToken).To(Equal("someaccesstoken"))
+						})
 
-							It("should have looked up the cf app names", func() {
-								Expect(getAppsCallCount).To(Equal(1))
-							})
+						It("should have looked up the cf app names", func() {
+							Expect(getAppsCallCount).To(Equal(1))
+						})
 
-							It("should not return an error", func() {
-								Expect(err).NotTo(HaveOccurred())
-							})
+						It("should not return an error", func() {
+							Expect(err).NotTo(HaveOccurred())
+						})
 
-							It("should return the service instance name", func() {
-								Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
-							})
+						It("should return the service instance name", func() {
+							Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
+						})
 
-							It("should return the eureka server URL", func() {
-								Expect(output).To(ContainSubstring("Server URL: https://eureka-dashboard-url/\n"))
-							})
+						It("should return the eureka server URL", func() {
+							Expect(output).To(ContainSubstring("Server URL: https://eureka-dashboard-url/\n"))
+						})
 
-							It("should return the registered applications", func() {
-								tab := &format.Table{}
-								tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
-								tab.AddRow([]string{"APP-1", "cfapp1", "0", "zone1", "UP"})
-								tab.AddRow([]string{"APP-2", "cfapp2", "0", "zone2", "OUT_OF_SERVICE"})
-								tab.AddRow([]string{"APP-2", "cfapp2", "1", "zone2", "UP"})
-								Expect(output).To(ContainSubstring(tab.String()))
-							})
+						It("should return the registered applications", func() {
+							tab := &format.Table{}
+							tab.Entitle([]string{"eureka app name", "cf app name", "cf instance index", "zone", "status"})
+							tab.AddRow([]string{"APP-1", "cfapp1", "0", "zone1", "UP"})
+							tab.AddRow([]string{"APP-2", "cfapp2", "0", "zone2", "OUT_OF_SERVICE"})
+							tab.AddRow([]string{"APP-2", "cfapp2", "1", "zone2", "UP"})
+							Expect(output).To(ContainSubstring(tab.String()))
 						})
 					})
 				})
