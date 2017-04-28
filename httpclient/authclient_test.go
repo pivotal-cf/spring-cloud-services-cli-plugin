@@ -41,9 +41,10 @@ func (b badReader) Read(p []byte) (n int, err error) {
 
 var _ = Describe("Authclient", func() {
 	const (
-		testUrl         = "https://eureka.pivotal.io/auth/request"
-		testAccessToken = "access-token"
-		errMessage      = "I'm sorry Dave, I'm afraid I can't do that."
+		testUrl               = "https://eureka.pivotal.io/auth/request"
+		testAccessToken       = "access-token"
+		testBearerAccessToken = "bearer " + testAccessToken
+		errMessage            = "I'm sorry Dave, I'm afraid I can't do that."
 	)
 
 	var (
@@ -57,99 +58,6 @@ var _ = Describe("Authclient", func() {
 	BeforeEach(func() {
 		fakeClient = &httpclientfakes.FakeClient{}
 		testErr = errors.New(errMessage)
-	})
-
-	Describe("GetClientCredentialsAccessToken", func() {
-		const (
-			accessTokenURL = "access-token-url"
-			clientId       = "client-id"
-			clientSecret   = "client-secret"
-		)
-
-		var (
-			accessToken string
-		)
-
-		BeforeEach(func() {
-			URL = accessTokenURL
-			resp := &http.Response{StatusCode: http.StatusOK}
-			resp.Body = ioutil.NopCloser(strings.NewReader(`{
-			"access_token": "access-token"
-}`))
-			fakeClient.DoReturns(resp, nil)
-		})
-
-		JustBeforeEach(func() {
-			authClient := httpclient.NewAuthenticatedClient(fakeClient)
-			accessToken, err = authClient.GetClientCredentialsAccessToken(URL, clientId, clientSecret)
-		})
-
-		Context("when the URL is invalid", func() {
-			BeforeEach(func() {
-				URL = ":"
-			})
-
-			It("should return a suitable error error", func() {
-				Expect(err).To(MatchError("Failed to create access token request: parse :: missing protocol scheme"))
-			})
-		})
-
-		It("should issue a suitable POST request", func() {
-			Expect(err).NotTo(HaveOccurred())
-			Expect(fakeClient.DoCallCount()).Should(Equal(1))
-			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Method).To(Equal("POST"))
-			Expect(req.URL.Path).To(Equal(accessTokenURL))
-			body, err := ioutil.ReadAll(req.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal("grant_type=client_credentials"))
-			Expect(accessToken).To(Equal("access-token"))
-		})
-
-		Context("when the POST request returns an error", func() {
-			BeforeEach(func() {
-				fakeClient.DoReturns(nil, testErr)
-			})
-
-			It("should return the error", func() {
-				Expect(err).To(MatchError(fmt.Sprintf("Failed to obtain access token: %s", errMessage)))
-			})
-		})
-
-		Context("when the POST request returns a bad status", func() {
-			BeforeEach(func() {
-				resp := &http.Response{StatusCode: http.StatusNotFound, Status: "404 Not found"}
-				fakeClient.DoReturns(resp, nil)
-			})
-
-			It("should return the error", func() {
-				Expect(err).To(MatchError("Failed to obtain access token: 404 Not found"))
-			})
-		})
-
-		Context("when the POST request returns a body which cannot be read", func() {
-			BeforeEach(func() {
-				resp := &http.Response{StatusCode: http.StatusOK}
-				resp.Body = ioutil.NopCloser(&badReader{})
-				fakeClient.DoReturns(resp, nil)
-			})
-
-			It("should return the error", func() {
-				Expect(err).To(MatchError("Failed to read access token: read error"))
-			})
-		})
-
-		Context("when the POST request returns invalid JSON", func() {
-			BeforeEach(func() {
-				resp := &http.Response{StatusCode: http.StatusOK}
-				resp.Body = ioutil.NopCloser(strings.NewReader("{"))
-				fakeClient.DoReturns(resp, nil)
-			})
-
-			It("should return the error", func() {
-				Expect(err).To(MatchError("Failed to unmarshal access token: unexpected end of JSON input"))
-			})
-		})
 	})
 
 	Describe("DoAuthenticatedGet", func() {
@@ -189,7 +97,7 @@ var _ = Describe("Authclient", func() {
 		It("should send a request with the correct authorization header", func() {
 			Expect(fakeClient.DoCallCount()).To(Equal(1))
 			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Header.Get("Authorization")).To(Equal(testAccessToken))
+			Expect(req.Header.Get("Authorization")).To(Equal(testBearerAccessToken))
 		})
 
 		It("should pass the response back", func() {
@@ -254,7 +162,7 @@ var _ = Describe("Authclient", func() {
 		It("should send a request with the correct authorization header", func() {
 			Expect(fakeClient.DoCallCount()).To(Equal(1))
 			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Header.Get("Authorization")).To(Equal(testAccessToken))
+			Expect(req.Header.Get("Authorization")).To(Equal(testBearerAccessToken))
 		})
 
 		It("should pass the status code back", func() {
@@ -330,7 +238,7 @@ var _ = Describe("Authclient", func() {
 		It("should send a request with the correct authorization header", func() {
 			Expect(fakeClient.DoCallCount()).To(Equal(1))
 			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Header.Get("Authorization")).To(Equal("Bearer " + testAccessToken))
+			Expect(req.Header.Get("Authorization")).To(Equal(testBearerAccessToken))
 		})
 
 		It("should send a request with the correct content type header", func() {

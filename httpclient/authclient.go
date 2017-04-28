@@ -17,24 +17,16 @@
 package httpclient
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 )
 
 //go:generate counterfeiter -o httpclientfakes/fake_authenticated_client.go . AuthenticatedClient
 type AuthenticatedClient interface {
-	GetClientCredentialsAccessToken(accessTokenURI string, clientId string, clientSecret string) (string, error)
-
-	// The access token must include the "bearer" authorisation scheme.
-	// See https://www.pivotaltracker.com/story/show/143022981
 	DoAuthenticatedGet(url string, accessToken string) (io.ReadCloser, int, error)
 
-	// The access token must include the "bearer" authorisation scheme.
-	// See https://www.pivotaltracker.com/story/show/143022981
 	DoAuthenticatedDelete(url string, accessToken string) (int, error)
 
 	DoAuthenticatedPost(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error)
@@ -48,39 +40,6 @@ func NewAuthenticatedClient(httpClient Client) *authenticatedClient {
 	return &authenticatedClient{Httpclient: httpClient}
 }
 
-type accessTokenInfo struct {
-	AccessToken string `json:"access_token"`
-}
-
-func (c *authenticatedClient) GetClientCredentialsAccessToken(accessTokenURI string, clientId string, clientSecret string) (string, error) {
-	body := strings.NewReader("grant_type=client_credentials")
-	req, err := http.NewRequest("POST", accessTokenURI, body)
-	if err != nil {
-		return "", fmt.Errorf("Failed to create access token request: %s", err)
-	}
-	req.SetBasicAuth(clientId, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := c.Httpclient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("Failed to obtain access token: %s", err)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("Failed to obtain access token: %s", resp.Status)
-	}
-
-	defer resp.Body.Close()
-	accessToken, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("Failed to read access token: %s", err)
-	}
-	accessTokenInfo := &accessTokenInfo{}
-	err = json.Unmarshal(accessToken, accessTokenInfo)
-	if err != nil {
-		return "", fmt.Errorf("Failed to unmarshal access token: %s", err)
-	}
-	return accessTokenInfo.AccessToken, nil
-}
-
 func (c *authenticatedClient) DoAuthenticatedGet(url string, accessToken string) (io.ReadCloser, int, error) {
 	statusCode := 0
 	req, err := http.NewRequest("GET", url, nil)
@@ -89,7 +48,7 @@ func (c *authenticatedClient) DoAuthenticatedGet(url string, accessToken string)
 	}
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", accessToken)
+	addAuthorizationHeader(req, accessToken)
 	resp, err := c.Httpclient.Do(req)
 	if err != nil {
 		return nil, 0, fmt.Errorf("Authenticated get of '%s' failed: %s", url, err)
@@ -108,7 +67,7 @@ func (c *authenticatedClient) DoAuthenticatedDelete(url string, accessToken stri
 	}
 
 	req.Header.Add("Accept", "application/json")
-	req.Header.Add("Authorization", accessToken)
+	addAuthorizationHeader(req, accessToken)
 	resp, err := c.Httpclient.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("Authenticated delete of '%s' failed: %s", url, err)
@@ -125,7 +84,7 @@ func (c *authenticatedClient) DoAuthenticatedPost(url string, bodyType string, b
 	if err != nil {
 		return nil, 0, fmt.Errorf("Request creation error: %s", err)
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
+	addAuthorizationHeader(req, accessToken)
 	req.Header.Set("Content-Type", bodyType)
 	resp, err := c.Httpclient.Do(req)
 	if err != nil {
@@ -136,4 +95,8 @@ func (c *authenticatedClient) DoAuthenticatedPost(url string, bodyType string, b
 	}
 
 	return resp.Body, resp.StatusCode, nil
+}
+
+func addAuthorizationHeader(req *http.Request, accessToken string) {
+	req.Header.Add("Authorization", fmt.Sprintf("bearer %s", accessToken))
 }

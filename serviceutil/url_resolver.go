@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016-Present Pivotal Software, Inc. All rights reserved.
+ * Copyright (C) 2017-Present Pivotal Software, Inc. All rights reserved.
  *
  * This program and the accompanying materials are made available under
  * the terms of the under the Apache License, Version 2.0 (the "License”);
@@ -14,24 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package eureka
+package serviceutil
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"net/url"
 	"strings"
 
-	"io/ioutil"
-
-	"net/http"
-
+	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-	parsedUrl, err := url.Parse(dashboardUrl)
+type serviceDefinitionResp struct {
+	Credentials struct {
+		URI string
+	}
+}
+
+// ServiceInstanceURL obtains the service instance URL of a service with a specific name. This is a secure operation and an access token is provided for authentication and authorisation.
+func ServiceInstanceURL(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+	serviceModel, err := cliConnection.GetService(serviceInstanceName)
+	if err != nil {
+		return "", fmt.Errorf("Service instance not found: %s", err)
+	}
+
+	parsedUrl, err := url.Parse(serviceModel.DashboardUrl)
 	if err != nil {
 		return "", err
 	}
@@ -39,7 +50,7 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 
 	segments := strings.Split(path, "/")
 	if len(segments) == 0 || (len(segments) == 1 && segments[0] == "") {
-		return "", fmt.Errorf("path of %s has no segments", dashboardUrl)
+		return "", fmt.Errorf("path of %s has no segments", serviceModel.DashboardUrl)
 	}
 	guid := segments[len(segments)-1]
 
@@ -53,23 +64,23 @@ func EurekaUrlFromDashboardUrl(dashboardUrl string, accessToken string, authClie
 			"This could be because the Spring Cloud Services broker version is too old.\n" +
 			"Please ensure SCS is at least version 1.3.3.\n")
 	}
-	var serviceDefinitionResp ServiceDefinitionResp
+	var serviceDefinitionResp serviceDefinitionResp
 	if err != nil {
-		return "", fmt.Errorf("Invalid service registry definition response: %s", err)
+		return "", fmt.Errorf("Invalid service definition response: %s", err)
 	}
 
 	body, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
-		return "", fmt.Errorf("Cannot read service registry definition response body: %s", err)
+		return "", fmt.Errorf("Cannot read service definition response body: %s", err)
 	}
 
 	err = json.Unmarshal(body, &serviceDefinitionResp)
-	if serviceDefinitionResp.Credentials.Uri == "" {
-		return "", fmt.Errorf("Invalid service registry definition response JSON: %s, response body: '%s'", err, string(body))
+	if err != nil {
+		return "", fmt.Errorf("JSON response failed to unmarshal: %s", string(body))
+	}
+	if serviceDefinitionResp.Credentials.URI == "" {
+		return "", fmt.Errorf("JSON response contained empty property 'credentials.url', response body: '%s'", string(body))
 
 	}
-	if err != nil {
-		return "", fmt.Errorf("JSON reponse contained empty property 'credentials.url': %s", string(body))
-	}
-	return serviceDefinitionResp.Credentials.Uri + "/", nil
+	return serviceDefinitionResp.Credentials.URI + "/", nil
 }

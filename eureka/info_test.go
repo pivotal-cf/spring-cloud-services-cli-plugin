@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"strings"
 
-	"code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,21 +32,24 @@ import (
 )
 
 var _ = Describe("Service Registry Info", func() {
+	const testAccessToken = "someaccesstoken"
+
 	var (
-		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeClient        *httpclientfakes.FakeClient
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		getServiceModel   plugin_models.GetService_Model
-		output            string
-		err               error
+		fakeCliConnection   *pluginfakes.FakeCliConnection
+		fakeClient          *httpclientfakes.FakeClient
+		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
+		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
+		resolverAccessToken string
+		output              string
+		err                 error
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeClient = &httpclientfakes.FakeClient{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+			resolverAccessToken = accessToken
 			return "https://eureka-dashboard-url/", nil
 		}
 	})
@@ -55,147 +58,119 @@ var _ = Describe("Service Registry Info", func() {
 		output, err = eureka.InfoWithResolver(fakeCliConnection, fakeClient, "some-service-registry", fakeAuthClient, fakeResolver)
 	})
 
-	Context("when the service is not found", func() {
+	Context("when the access token is not available", func() {
 		BeforeEach(func() {
-			fakeCliConnection.GetServiceReturns(getServiceModel, errors.New("some error"))
+			fakeCliConnection.AccessTokenReturns("", errors.New("some access token error"))
 		})
 
 		It("should return a suitable error", func() {
-			Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
-			Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal("some-service-registry"))
+			Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
 			Expect(err).To(HaveOccurred())
-			Expect(err).To(MatchError("Service registry instance not found: some error"))
+			Expect(err).To(MatchError("Access token not available: some access token error"))
 		})
 	})
 
-	Context("when the service is found", func() {
+	Context("when the access token is available", func() {
 		BeforeEach(func() {
-			getServiceModel.DashboardUrl = "https://spring-cloud-broker.some.host.name/x/y/z/some-guid"
-			fakeCliConnection.GetServiceReturns(getServiceModel, nil)
+			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
 		})
 
-		Context("but the access token is not available", func() {
-			var accessTokenCallCount int
-
+		Context("but the eureka URL cannot be resolved", func() {
 			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "", errors.New("some access token error")
+				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
+					return "", errors.New("resolution error")
 				}
 			})
 
 			It("should return a suitable error", func() {
-				Expect(accessTokenCallCount).To(Equal(1))
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Access token not available: some access token error"))
+				Expect(err).To(MatchError("Error obtaining service registry URL: resolution error"))
 			})
 		})
 
-		Context("and the access token is available", func() {
-			var accessTokenCallCount int
-
-			BeforeEach(func() {
-				accessTokenCallCount = 0
-				fakeCliConnection.AccessTokenStub = func() (string, error) {
-					accessTokenCallCount++
-					return "bearer someaccesstoken", nil
-				}
-			})
-
-			Context("but the eureka dashboard URL cannot be resolved", func() {
+		Context("and the eureka URL can be resolved", func() {
+			Context("but eureka cannot be contacted", func() {
 				BeforeEach(func() {
-					fakeResolver = func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-						return "", errors.New("resolution error")
-					}
+					fakeClient.DoReturns(nil, errors.New("some error"))
 				})
 
 				It("should return a suitable error", func() {
 					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("Error obtaining service registry dashboard URL: resolution error"))
+					Expect(err).To(MatchError("Service registry error: some error"))
 				})
 			})
 
-			Context("and the eureka dashboard URL can be resolved", func() {
-				Context("but eureka cannot be contacted", func() {
+			Context("and eureka responds", func() {
+				Context("but the response body is missing", func() {
 					BeforeEach(func() {
-						fakeClient.DoReturns(nil, errors.New("some error"))
+						resp := &http.Response{}
+						fakeClient.DoReturns(resp, nil)
 					})
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("Service registry error: some error"))
+						Expect(err).To(MatchError("Invalid service registry response: missing body"))
 					})
 				})
 
-				Context("and eureka responds", func() {
-					Context("but the response body is missing", func() {
-						BeforeEach(func() {
-							resp := &http.Response{}
-							fakeClient.DoReturns(resp, nil)
-						})
-
-						It("should return a suitable error", func() {
-							Expect(err).To(HaveOccurred())
-							Expect(err).To(MatchError("Invalid service registry response: missing body"))
-						})
+				Context("but the response body contains invalid JSON", func() {
+					BeforeEach(func() {
+						resp := &http.Response{}
+						resp.Body = ioutil.NopCloser(strings.NewReader(`{`))
+						fakeClient.DoReturns(resp, nil)
 					})
 
-					Context("but the response body contains invalid JSON", func() {
-						BeforeEach(func() {
-							resp := &http.Response{}
-							resp.Body = ioutil.NopCloser(strings.NewReader(`{`))
-							fakeClient.DoReturns(resp, nil)
-						})
+					It("should return a suitable error", func() {
+						Expect(err).To(HaveOccurred())
+						Expect(err.Error()).To(HavePrefix("Invalid service registry response JSON: "))
+					})
+				})
 
-						It("should return a suitable error", func() {
-							Expect(err).To(HaveOccurred())
-							Expect(err.Error()).To(HavePrefix("Invalid service registry response JSON: "))
-						})
+				Context("and the response is valid", func() {
+					BeforeEach(func() {
+						resp := &http.Response{}
+						resp.Body = ioutil.NopCloser(strings.NewReader(`{"nodeCount":"1","peers":[{"uri":"uri1","issuer":"issuer1","skipSslValidation":true},{"uri":"uri2","issuer":"issuer2","skipSslValidation":false}]}`))
+						fakeClient.DoReturns(resp, nil)
 					})
 
-					Context("and the response is valid", func() {
-						BeforeEach(func() {
-							resp := &http.Response{}
-							resp.Body = ioutil.NopCloser(strings.NewReader(`{"nodeCount":"1","peers":[{"uri":"uri1","issuer":"issuer1","skipSslValidation":true},{"uri":"uri2","issuer":"issuer2","skipSslValidation":false}]}`))
-							fakeClient.DoReturns(resp, nil)
-						})
+					It("should have obtained an access token", func() {
+						Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
+					})
 
-						It("should have obtained an access token", func() {
-							Expect(accessTokenCallCount).To(Equal(1))
-						})
+					It("should have passed the access token to the resolver", func() {
+						Expect(resolverAccessToken).To(Equal(testAccessToken))
+					})
 
-						It("should have sent a request to the correct URL", func() {
-							Expect(fakeClient.DoCallCount()).To(Equal(1))
-							req := fakeClient.DoArgsForCall(0)
-							Expect(req.URL.String()).To(Equal("https://eureka-dashboard-url/info"))
-						})
+					It("should have sent a request to the correct URL", func() {
+						Expect(fakeClient.DoCallCount()).To(Equal(1))
+						req := fakeClient.DoArgsForCall(0)
+						Expect(req.URL.String()).To(Equal("https://eureka-dashboard-url/info"))
+					})
 
-						It("should have sent a request with the correct accept header", func() {
-							Expect(fakeClient.DoCallCount()).To(Equal(1))
-							req := fakeClient.DoArgsForCall(0)
-							Expect(req.Header.Get("Accept")).To(Equal("application/json"))
-						})
+					It("should have sent a request with the correct accept header", func() {
+						Expect(fakeClient.DoCallCount()).To(Equal(1))
+						req := fakeClient.DoArgsForCall(0)
+						Expect(req.Header.Get("Accept")).To(Equal("application/json"))
+					})
 
-						It("should not return an error", func() {
-							Expect(err).NotTo(HaveOccurred())
-						})
+					It("should not return an error", func() {
+						Expect(err).NotTo(HaveOccurred())
+					})
 
-						It("should return the service instance name", func() {
-							Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
-						})
+					It("should return the service instance name", func() {
+						Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
+					})
 
-						It("should return the eureka server URL", func() {
-							Expect(output).To(ContainSubstring("Server URL: https://eureka-dashboard-url/\n"))
-						})
+					It("should return the eureka server URL", func() {
+						Expect(output).To(ContainSubstring("Server URL: https://eureka-dashboard-url/\n"))
+					})
 
-						It("should return the high availability count", func() {
-							Expect(output).To(ContainSubstring("High availability count: 1\n"))
-						})
+					It("should return the high availability count", func() {
+						Expect(output).To(ContainSubstring("High availability count: 1\n"))
+					})
 
-						It("should return the peers", func() {
-							Expect(output).To(ContainSubstring("Peers: uri1, uri2\n"))
-						})
+					It("should return the peers", func() {
+						Expect(output).To(ContainSubstring("Peers: uri1, uri2\n"))
 					})
 				})
 			})

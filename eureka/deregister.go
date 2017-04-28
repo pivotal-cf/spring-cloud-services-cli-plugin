@@ -24,28 +24,26 @@ import (
 	"strconv"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
 func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
-	return DeregisterWithResolver(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, EurekaUrlFromDashboardUrl)
+	return DeregisterWithResolver(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, serviceutil.ServiceInstanceURL)
 }
 
 func DeregisterWithResolver(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int,
-	eurekaUrlFromDashboardUrl func(dashboardUrl string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
-	serviceModel, err := cliConnection.GetService(srInstanceName)
+	servinceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
-		return "", fmt.Errorf("Service registry instance not found: %s", err)
-	}
-	accessToken, err := cliConnection.AccessToken()
-	if err != nil {
-		return "", fmt.Errorf("Access token not available: %s", err)
+		return "", err
 	}
 
-	eureka, err := eurekaUrlFromDashboardUrl(serviceModel.DashboardUrl, accessToken, authClient)
+	eureka, err := servinceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
 	if err != nil {
-		return "", fmt.Errorf("Error obtaining service registry dashboard URL: %s", err)
+		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}
 
 	apps, err := getRegisteredAppsWithCfAppName(cliConnection, authClient, accessToken, eureka, cfAppName)

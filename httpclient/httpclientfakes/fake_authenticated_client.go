@@ -9,21 +9,6 @@ import (
 )
 
 type FakeAuthenticatedClient struct {
-	GetClientCredentialsAccessTokenStub        func(accessTokenURI string, clientId string, clientSecret string) (string, error)
-	getClientCredentialsAccessTokenMutex       sync.RWMutex
-	getClientCredentialsAccessTokenArgsForCall []struct {
-		accessTokenURI string
-		clientId       string
-		clientSecret   string
-	}
-	getClientCredentialsAccessTokenReturns struct {
-		result1 string
-		result2 error
-	}
-	getClientCredentialsAccessTokenReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
-	}
 	DoAuthenticatedGetStub        func(url string, accessToken string) (io.ReadCloser, int, error)
 	doAuthenticatedGetMutex       sync.RWMutex
 	doAuthenticatedGetArgsForCall []struct {
@@ -74,59 +59,6 @@ type FakeAuthenticatedClient struct {
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
-}
-
-func (fake *FakeAuthenticatedClient) GetClientCredentialsAccessToken(accessTokenURI string, clientId string, clientSecret string) (string, error) {
-	fake.getClientCredentialsAccessTokenMutex.Lock()
-	ret, specificReturn := fake.getClientCredentialsAccessTokenReturnsOnCall[len(fake.getClientCredentialsAccessTokenArgsForCall)]
-	fake.getClientCredentialsAccessTokenArgsForCall = append(fake.getClientCredentialsAccessTokenArgsForCall, struct {
-		accessTokenURI string
-		clientId       string
-		clientSecret   string
-	}{accessTokenURI, clientId, clientSecret})
-	fake.recordInvocation("GetClientCredentialsAccessToken", []interface{}{accessTokenURI, clientId, clientSecret})
-	fake.getClientCredentialsAccessTokenMutex.Unlock()
-	if fake.GetClientCredentialsAccessTokenStub != nil {
-		return fake.GetClientCredentialsAccessTokenStub(accessTokenURI, clientId, clientSecret)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.getClientCredentialsAccessTokenReturns.result1, fake.getClientCredentialsAccessTokenReturns.result2
-}
-
-func (fake *FakeAuthenticatedClient) GetClientCredentialsAccessTokenCallCount() int {
-	fake.getClientCredentialsAccessTokenMutex.RLock()
-	defer fake.getClientCredentialsAccessTokenMutex.RUnlock()
-	return len(fake.getClientCredentialsAccessTokenArgsForCall)
-}
-
-func (fake *FakeAuthenticatedClient) GetClientCredentialsAccessTokenArgsForCall(i int) (string, string, string) {
-	fake.getClientCredentialsAccessTokenMutex.RLock()
-	defer fake.getClientCredentialsAccessTokenMutex.RUnlock()
-	return fake.getClientCredentialsAccessTokenArgsForCall[i].accessTokenURI, fake.getClientCredentialsAccessTokenArgsForCall[i].clientId, fake.getClientCredentialsAccessTokenArgsForCall[i].clientSecret
-}
-
-func (fake *FakeAuthenticatedClient) GetClientCredentialsAccessTokenReturns(result1 string, result2 error) {
-	fake.GetClientCredentialsAccessTokenStub = nil
-	fake.getClientCredentialsAccessTokenReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeAuthenticatedClient) GetClientCredentialsAccessTokenReturnsOnCall(i int, result1 string, result2 error) {
-	fake.GetClientCredentialsAccessTokenStub = nil
-	if fake.getClientCredentialsAccessTokenReturnsOnCall == nil {
-		fake.getClientCredentialsAccessTokenReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 error
-		})
-	}
-	fake.getClientCredentialsAccessTokenReturnsOnCall[i] = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
 }
 
 func (fake *FakeAuthenticatedClient) DoAuthenticatedGet(url string, accessToken string) (io.ReadCloser, int, error) {
@@ -296,8 +228,6 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedPostReturnsOnCall(i int, res
 func (fake *FakeAuthenticatedClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.getClientCredentialsAccessTokenMutex.RLock()
-	defer fake.getClientCredentialsAccessTokenMutex.RUnlock()
 	fake.doAuthenticatedGetMutex.RLock()
 	defer fake.doAuthenticatedGetMutex.RUnlock()
 	fake.doAuthenticatedDeleteMutex.RLock()
