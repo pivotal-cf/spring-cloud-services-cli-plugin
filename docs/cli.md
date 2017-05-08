@@ -70,7 +70,7 @@ ALIAS:
 
 OPTIONS:
    --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
-   --i/--cf-instance-index      Deregister a specific instance in the Eureka registry. The instance index number can be found by using the the service-registry-list command.
+   --i/--cf-instance-index      Deregister a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
 
 
