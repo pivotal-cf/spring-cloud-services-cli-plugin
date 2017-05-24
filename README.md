@@ -11,8 +11,11 @@ For information on plugin development, see
 To build the plugin, install go and govendor (see the [Go Development](docs/go.adoc) guide for instructions) and issue:
 ```bash
 $ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ govendor install +local
+$ govendor install -ldflags='-X main.pluginVersion=VERSION' +local
 ```
+where `VERSION` is a string of the form `<major>.<minor>.<build>` where `<major>`, `<minor>`, and `<build>` are integers.
+
+Note: if an invalid `VERSION` is provided, the build will succeed, but the plugin will fail to install (with exit status code 64).
 
 ## Installing
 
