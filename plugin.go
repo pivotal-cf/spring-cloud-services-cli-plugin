@@ -27,14 +27,17 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/pluginutil"
 )
+
+// Plugin version. Substitute "<major>.<minor>.<build>" at build time, e.g. using -ldflags='-X main.pluginVersion=1.2.3'
+var pluginVersion = "invalid version - plugin was not built correctly"
 
 // Plugin is a struct implementing the Plugin interface, defined by the core CLI, which can
 // be found in "code.cloudfoundry.org/cli/plugin/plugin.go".
 type Plugin struct{}
 
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
-
 	skipSslValidation, cfInstanceIndex, positionalArgs, err := cli.ParseFlags(args)
 	if err != nil {
 		format.Diagnose(string(err.Error()), os.Stderr, func() {
@@ -128,14 +131,19 @@ func diagnoseWithHelp(message string, operation string) {
 	os.Exit(1)
 }
 
+func failInstallation(format string, inserts ...interface{}) {
+	// There is currently no way to emit the message to the command line during plugin installation. Standard output and error are swallowed.
+	fmt.Printf(format, inserts...)
+	fmt.Println("")
+
+	// Fail the installation
+	os.Exit(64)
+}
+
 func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name: "SCSPlugin",
-		Version: plugin.VersionType{
-			Major: 0,
-			Minor: 0,
-			Build: 1,
-		},
+		Name:    "SCSPlugin",
+		Version: pluginutil.ParsePluginVersion(pluginVersion, failInstallation),
 		MinCliVersion: plugin.VersionType{
 			Major: 6,
 			Minor: 7,
@@ -183,5 +191,11 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func main() {
+	if len(os.Args) == 1 {
+		fmt.Println("This program is a plugin which expects to be installed into the cf CLI. It is not intended to be run stand-alone.")
+		pv := pluginutil.ParsePluginVersion(pluginVersion, failInstallation)
+		fmt.Printf("Plugin version: %d.%d.%d\n", pv.Major, pv.Minor, pv.Build)
+		os.Exit(0)
+	}
 	plugin.Start(new(Plugin))
 }
