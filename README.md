@@ -12,7 +12,7 @@ To build the plugin, install go and govendor (see the [Go Development](docs/go.a
 ```bash
 $ rm $GOPATH/bin/spring-cloud-services-cli-plugin
 $ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ govendor install -ldflags='-X main.pluginVersion=$(cat version)' +local
+$ govendor install -ldflags="-X main.pluginVersion=$(cat version)" +local
 ```
 This builds the plugin with the current version number in the [version file](version).
 
