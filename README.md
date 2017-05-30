@@ -10,12 +10,20 @@ For information on plugin development, see
 
 To build the plugin, install go and govendor (see the [Go Development](docs/go.adoc) guide for instructions) and issue:
 ```bash
+$ rm $GOPATH/bin/spring-cloud-services-cli-plugin
 $ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ govendor install -ldflags='-X main.pluginVersion=VERSION' +local
+$ govendor install -ldflags='-X main.pluginVersion=$(cat version)' +local
 ```
-where `VERSION` is a string of the form `<major>.<minor>.<build>` where `<major>`, `<minor>`, and `<build>` are integers.
+This builds the plugin with the current version number in the [version file](version).
 
-Note: if an invalid `VERSION` is provided, the build will succeed, but the plugin will fail to install (with exit status code 64).
+Note: if an invalid version number is provided, the build will succeed, but the plugin will fail to install (with exit status code 64).
+
+To print the version number of the built plugin, run it as a stand-alone executable, for example:
+```bash
+$ $GOPATH/bin/spring-cloud-services-cli-plugin
+This program is a plugin which expects to be installed into the cf CLI. It is not intended to be run stand-alone.
+Plugin version: 0.0.8
+```
 
 ## Installing
 
