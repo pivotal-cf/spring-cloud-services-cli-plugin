@@ -49,6 +49,8 @@ $ cd docs
 $ ./generate-cli-docs-from-help.bash
 ```
 
+This needs to be done whenever commands are added, modified, or deleted. Note that the script contains a list of commands which needs to be kept in step with the available commands.
+
 The generated docs may be viewed [here](docs/cli.md).
 
 ## Go Development

@@ -26,8 +26,12 @@ import (
 
 	"net/http"
 
+	"strconv"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
@@ -125,4 +129,85 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 	}
 
 	return "", errors.New("CF App not found")
+}
+
+// Utility for operating on an application instance in the service registry
+
+type InstanceOperation func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error
+
+func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int,
+	servinceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
+	operate InstanceOperation) (string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
+	if err != nil {
+		return "", err
+	}
+
+	eureka, err := servinceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
+	if err != nil {
+		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
+	}
+
+	apps, err := getRegisteredAppsWithCfAppName(cliConnection, authClient, accessToken, eureka, cfAppName)
+	if err != nil {
+		return "", err
+	}
+	statusMessage := ""
+	statusTemplate := "Processed service instance %s with index %s\n"
+	if instanceIndex == nil { //Index is omitted, deregister all instances
+		var err error
+		for _, app := range apps {
+			err = operate(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
+			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
+		}
+		if err != nil {
+			return "", fmt.Errorf("Error processing service instance: %s", err)
+		}
+	} else { //Instance ID provided, deregister a single instance
+		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
+		if err != nil {
+			return "", err
+		}
+		err = operate(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
+		statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
+
+		if err != nil {
+			return "", fmt.Errorf("Error processing service instance: %s", err)
+		}
+	}
+	return statusMessage, nil
+}
+
+func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
+	registeredAppsWithCfAppName := []eurekaAppRecord{}
+
+	registeredApps, err := getRegisteredApps(cliConnection, authClient, accessToken, eureka)
+
+	if err != nil {
+		return registeredAppsWithCfAppName, err
+	}
+
+	for _, app := range registeredApps {
+		if app.cfAppName == cfAppName {
+			registeredAppsWithCfAppName = append(registeredAppsWithCfAppName, app)
+		}
+	}
+	if len(registeredAppsWithCfAppName) == 0 {
+		return registeredAppsWithCfAppName, errors.New(fmt.Sprintf("cf app name %s not found", cfAppName))
+	}
+
+	return registeredAppsWithCfAppName, nil
+}
+
+func getRegisteredAppByInstanceIndex(appRecords []eurekaAppRecord, requestedIndex int) (eurekaAppRecord, error) {
+	for _, app := range appRecords {
+		registeredIndex, err := strconv.Atoi(app.instanceIndex)
+		if err != nil {
+			return eurekaAppRecord{}, err
+		}
+		if registeredIndex == requestedIndex {
+			return app, nil
+		}
+	}
+	return eurekaAppRecord{}, fmt.Errorf("No instance found with index %d", requestedIndex)
 }

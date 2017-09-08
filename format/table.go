@@ -43,21 +43,21 @@ func (t *Table) String() string {
 	result := ""
 	for col, tw := range t.title {
 		padding := strings.Repeat(" ", wds[col]-len(tw))
-		result = result + fmt.Sprintf("%s%s ", bold(tw), padding)
+		result += fmt.Sprintf("%s%s ", bold(tw), padding)
 	}
 
-	result = result + "\n"
+	result += "\n"
 
 	for _, r := range t.rows {
 		for col, c := range r {
 			padding := strings.Repeat(" ", wds[col]-len(c))
 			if col == 0 {
-				result = result + fmt.Sprintf("%s%s ", cyan(c), padding)
+				result += fmt.Sprintf("%s%s ", cyan(c), padding)
 			} else {
-				result = result + fmt.Sprintf("%s%s ", c, padding)
+				result += fmt.Sprintf("%s%s ", c, padding)
 			}
 		}
-		result = result + "\n"
+		result += "\n"
 	}
 
 	return result

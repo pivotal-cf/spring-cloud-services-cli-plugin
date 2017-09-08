@@ -34,9 +34,16 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-var _ = Describe("Deregister", func() {
+var _ = Describe("OperateOnApplication", func() {
 
 	const testAccessToken = "someaccesstoken"
+
+	type operationArg struct {
+		accessToken   string
+		eurekaUrl     string
+		eurekaAppName string
+		instanceId    string
+	}
 
 	var (
 		fakeCliConnection   *pluginfakes.FakeCliConnection
@@ -44,8 +51,15 @@ var _ = Describe("Deregister", func() {
 		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
 		resolverAccessToken string
 		output              string
-		err                 error
-		instanceIndex       *int
+
+		fakeOperation      eureka.InstanceOperation
+		operationCallCount int
+		operationArgs      []operationArg
+
+		operationReturn error
+
+		err           error
+		instanceIndex *int
 	)
 
 	BeforeEach(func() {
@@ -56,10 +70,24 @@ var _ = Describe("Deregister", func() {
 		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
+
+		operationCallCount = 0
+		operationArgs = []operationArg{}
+		operationReturn = nil
+		fakeOperation = func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
+			operationCallCount++
+			operationArgs = append(operationArgs, operationArg{
+				accessToken:   accessToken,
+				eurekaUrl:     eurekaUrl,
+				eurekaAppName: eurekaAppName,
+				instanceId:    instanceId,
+			})
+			return operationReturn
+		}
 	})
 
 	JustBeforeEach(func() {
-		output, err = eureka.DeregisterWithResolver(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, fakeResolver)
+		output, err = eureka.OperateOnApplication(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, fakeResolver, fakeOperation)
 	})
 
 	It("should attempt to obtain an access token", func() {
@@ -96,9 +124,7 @@ var _ = Describe("Deregister", func() {
 		})
 
 		Context("when the eureka URL can be resolved", func() {
-			var (
-				testErr error
-			)
+			var testErr error
 
 			BeforeEach(func() {
 				testErr = errors.New("failed")
@@ -124,6 +150,7 @@ var _ = Describe("Deregister", func() {
 							    "instance":[
 							       {
 								  "app":"APP-1",
+				                  "instanceId":"instance-1",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -149,17 +176,22 @@ var _ = Describe("Deregister", func() {
 				Expect(tok).To(Equal(testAccessToken))
 			})
 
-			It("should successfully deregister the service", func() {
-				Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+			It("should successfully operate on the service", func() {
+				Expect(operationCallCount).To(Equal(1))
+				args := operationArgs[0]
+				Expect(args.accessToken).To(Equal(testAccessToken))
+				Expect(args.eurekaUrl).To(Equal("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/"))
+				Expect(args.eurekaAppName).To(Equal("APP-1"))
+				Expect(args.instanceId).To(Equal("instance-1"))
 			})
 
-			Context("when deregistering the service fails", func() {
+			Context("when the operation fails", func() {
 				BeforeEach(func() {
-					fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
+					operationReturn = testErr
 				})
 
 				It("should return the error", func() {
-					Expect(err.Error()).To(ContainSubstring("Error deregistering service instance: failed"))
+					Expect(err.Error()).To(ContainSubstring("Error processing service instance: failed"))
 				})
 			})
 
@@ -195,6 +227,7 @@ var _ = Describe("Deregister", func() {
 							    "instance":[
 							       {
 								  "app":"APP-1",
+ 			                      "instanceId":"instance-1",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -204,6 +237,7 @@ var _ = Describe("Deregister", func() {
 							       },
 							       {
 								  "app":"APP-2",
+ 			                      "instanceId":"instance-1",
 								  "status":"UNKNOWN",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -212,6 +246,7 @@ var _ = Describe("Deregister", func() {
 							       },
 							       {
 								  "app":"APP-3",
+ 			                      "instanceId":"instance-1",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -226,13 +261,26 @@ var _ = Describe("Deregister", func() {
 						}`)), 200, nil)
 
 				})
-				It("should not deregister the service with a missing guid", func() {
+
+				It("should operate on the instances with guids", func() {
 					Expect(err).ToNot(HaveOccurred())
-					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(2))
+					Expect(operationCallCount).To(Equal(2))
+
+					args := operationArgs[0]
+					Expect(args.accessToken).To(Equal(testAccessToken))
+					Expect(args.eurekaUrl).To(Equal("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/"))
+					Expect(args.eurekaAppName).To(Equal("APP-1"))
+					Expect(args.instanceId).To(Equal("instance-1"))
+
+					args = operationArgs[1]
+					Expect(args.accessToken).To(Equal(testAccessToken))
+					Expect(args.eurekaUrl).To(Equal("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/"))
+					Expect(args.eurekaAppName).To(Equal("APP-3"))
+					Expect(args.instanceId).To(Equal("instance-1"))
 				})
 
-				It("should inform the user that 2 instances have been deregistered", func() {
-					template := "Deregistered service instance %s with index %s\n"
+				It("should inform the user that 2 instances have been processed", func() {
+					template := "Processed service instance %s with index %s\n"
 					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
 					line2 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-3")), format.Bold(format.Cyan("3")))
 
@@ -278,6 +326,7 @@ var _ = Describe("Deregister", func() {
 							    "instance":[
 							       {
 								  "app":"APP-1",
+ 			                      "instanceId":"instance-1",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -287,6 +336,7 @@ var _ = Describe("Deregister", func() {
 							       },
 							       {
 								  "app":"APP-1",
+ 			                      "instanceId":"instance-2",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -296,6 +346,7 @@ var _ = Describe("Deregister", func() {
 							       },
 							       {
 								  "app":"APP-1",
+ 			                      "instanceId":"instance-3",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
@@ -318,25 +369,30 @@ var _ = Describe("Deregister", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("should only call the deregister function once", func() {
-					Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
+				It("should process just the required instance", func() {
+					Expect(operationCallCount).To(Equal(1))
+					args := operationArgs[0]
+					Expect(args.accessToken).To(Equal(testAccessToken))
+					Expect(args.eurekaUrl).To(Equal("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/"))
+					Expect(args.eurekaAppName).To(Equal("APP-1"))
+					Expect(args.instanceId).To(Equal("instance-2"))
 				})
 
 				It("should inform the user about the instance deregistration", func() {
-					template := "Deregistered service instance %s with index %s\n"
+					template := "Processed service instance %s with index %s\n"
 					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
 
 					Expect(output).To(Not(BeEmpty()))
 					Expect(output).To(ContainSubstring(line1))
 				})
 
-				Context("when deleting the registration fails", func() {
+				Context("when the operation fails", func() {
 					BeforeEach(func() {
-						fakeAuthClient.DoAuthenticatedDeleteReturns(0, testErr)
+						operationReturn = testErr
 					})
 
 					It("should return a suitable error", func() {
-						Expect(err).To(MatchError("Error deregistering service instance: failed"))
+						Expect(err).To(MatchError("Error processing service instance: failed"))
 					})
 				})
 
@@ -371,6 +427,7 @@ var _ = Describe("Deregister", func() {
 							    "instance":[
 							       {
 								  "app":"APP-1",
+ 			                      "instanceId":"instance-1",
 								  "status":"UP",
 								  "metadata":{
 								     "zone":"zone-a",
