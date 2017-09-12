@@ -30,6 +30,8 @@ type AuthenticatedClient interface {
 	DoAuthenticatedDelete(url string, accessToken string) (int, error)
 
 	DoAuthenticatedPost(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error)
+
+	DoAuthenticatedPut(url string, accessToken string) (int, error)
 }
 
 type authenticatedClient struct {
@@ -95,6 +97,24 @@ func (c *authenticatedClient) DoAuthenticatedPost(url string, bodyType string, b
 	}
 
 	return resp.Body, resp.StatusCode, nil
+}
+
+func (c *authenticatedClient) DoAuthenticatedPut(url string, accessToken string) (int, error) {
+	req, err := http.NewRequest("PUT", url, nil)
+	if err != nil {
+		return 0, fmt.Errorf("Request creation error: %s", err)
+	}
+
+	req.Header.Add("Accept", "application/json")
+	addAuthorizationHeader(req, accessToken)
+	resp, err := c.Httpclient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("Authenticated put of '%s' failed: %s", url, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return resp.StatusCode, fmt.Errorf("Authenticated put of '%s' failed: %s", url, resp.Status)
+	}
+	return resp.StatusCode, nil
 }
 
 func addAuthorizationHeader(req *http.Request, accessToken string) {

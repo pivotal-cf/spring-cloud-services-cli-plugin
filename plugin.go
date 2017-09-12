@@ -59,11 +59,25 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, authClient)
 		})
 
+	case "service-registry-enable":
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
+		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.Enable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
+		})
+
 	case "service-registry-deregister":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
 		runAction(cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
 			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
+		})
+
+	case "service-registry-disable":
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
+		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
+		runAction(cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+			return eureka.Disable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
 		})
 
 	case "service-registry-info":
@@ -162,9 +176,27 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 			{
 				Name:     "service-registry-deregister",
 				HelpText: "Deregister an application registered with a Spring Cloud Services service registry",
-				Alias:    "srd",
+				Alias:    "srdr",
 				UsageDetails: plugin.Usage{
 					Usage:   "   cf service-registry-deregister SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
+					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
+				},
+			},
+			{
+				Name:     "service-registry-disable",
+				HelpText: "Disable an application registered with a Spring Cloud Services service registry so that it is unavailable for traffic",
+				Alias:    "srda",
+				UsageDetails: plugin.Usage{
+					Usage:   "   cf service-registry-disable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
+					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
+				},
+			},
+			{
+				Name:     "service-registry-enable",
+				HelpText: "Enable an application registered with a Spring Cloud Services service registry so that it is available for traffic",
+				Alias:    "sren",
+				UsageDetails: plugin.Usage{
+					Usage:   "   cf service-registry-enable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
 					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
 				},
 			},
