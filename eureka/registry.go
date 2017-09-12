@@ -136,14 +136,14 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 type InstanceOperation func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error
 
 func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int,
-	servinceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
+	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
 	operate InstanceOperation) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	eureka, err := servinceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
+	eureka, err := serviceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}

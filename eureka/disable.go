@@ -27,6 +27,7 @@ import (
 func Disable(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
 	return OperateOnApplication(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, serviceutil.ServiceInstanceURL,
 		func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
+			// Override the registration status to be OUT_OF_SERVICE.
 			_, err := authClient.DoAuthenticatedPut(fmt.Sprintf("%seureka/apps/%s/%s/status?value=OUT_OF_SERVICE", eurekaUrl, eurekaAppName, instanceId), accessToken)
 			return err
 		})

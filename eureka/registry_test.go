@@ -144,24 +144,24 @@ var _ = Describe("OperateOnApplication", func() {
 
 				fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
-						   "applications":{
-						      "application":[
-							 {
-							    "instance":[
-							       {
-								  "app":"APP-1",
-				                  "instanceId":"instance-1",
-								  "status":"UP",
-								  "metadata":{
-								     "zone":"zone-a",
-								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-								     "cfInstanceIndex":"2"
-								  }
-							       }
-							    ]
-							 }
-						      ]
-						   }
+							"applications":{
+								"application":[
+									{
+										"instance":[
+											{
+												"app":"APP-1",
+												"instanceId":"instance-1",
+												"status":"UP",
+												"metadata":{
+													"zone":"zone-a",
+													"cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+													"cfInstanceIndex":"2"
+												}
+											}
+										]
+									}
+								]
+							}
 						}`)), 200, nil)
 
 			})
@@ -321,42 +321,42 @@ var _ = Describe("OperateOnApplication", func() {
 					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
-						      "application":[
-							 {
-							    "instance":[
-							       {
-								  "app":"APP-1",
- 			                      "instanceId":"instance-1",
-								  "status":"UP",
-								  "metadata":{
-								     "zone":"zone-a",
-								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-								     "cfInstanceIndex":"0"
-								  }
-							       },
-							       {
-								  "app":"APP-1",
- 			                      "instanceId":"instance-2",
-								  "status":"UP",
-								  "metadata":{
-								     "zone":"zone-a",
-								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-								     "cfInstanceIndex":"1"
-								  }
-							       },
-							       {
-								  "app":"APP-1",
- 			                      "instanceId":"instance-3",
-								  "status":"UP",
-								  "metadata":{
-								     "zone":"zone-a",
-								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-								     "cfInstanceIndex":"2"
-								  }
-							       }
-							    ]
-							 }
-						      ]
+							  "application":[
+							 		{
+										"instance":[
+								  			{
+								  				"app":"APP-1",
+								  				"instanceId":"instance-1",
+								  				"status":"UP",
+								  				"metadata":{
+									 				"zone":"zone-a",
+									 				"cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+									 				"cfInstanceIndex":"0"
+								  				}
+								   			},
+								 			{
+								  				"app":"APP-1",
+								  				"instanceId":"instance-2",
+								  				"status":"UP",
+								  				"metadata":{
+									 				"zone":"zone-a",
+									 				"cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+									 				"cfInstanceIndex":"1"
+								  				}
+								   			},
+								   			{
+								  				"app":"APP-1",
+								  				"instanceId":"instance-3",
+								  				"status":"UP",
+								  				"metadata":{
+										 			"zone":"zone-a",
+									 				"cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+									 				"cfInstanceIndex":"2"
+								  				}
+								   			}
+										]
+							 		}
+							  ]
 						   }
 						}`)), 200, nil)
 
@@ -422,22 +422,22 @@ var _ = Describe("OperateOnApplication", func() {
 					fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString(`
 						{
 						   "applications":{
-						      "application":[
-							 {
-							    "instance":[
-							       {
-								  "app":"APP-1",
- 			                      "instanceId":"instance-1",
-								  "status":"UP",
-								  "metadata":{
-								     "zone":"zone-a",
-								     "cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
-								     "cfInstanceIndex":"bad-integer"
-								  }
-							       }
-							    ]
-							 }
-						      ]
+							  "application":[
+								{
+									"instance":[
+										{
+								  			"app":"APP-1",
+								  			"instanceId":"instance-1",
+								 			"status":"UP",
+								  			"metadata":{
+									 			"zone":"zone-a",
+									 			"cfAppGuid":"062bd505-8b19-44ca-4451-4a932932143a",
+									 			"cfInstanceIndex":"bad-integer"
+									  		}
+									   	}
+									]
+							 	}
+							  ]
 						   }
 						}`)), 200, nil)
 
