@@ -21,6 +21,8 @@ import (
 	"net/http"
 	"os"
 
+	"io"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cli"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
@@ -62,33 +64,33 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.Enable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
+		runAction(cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return eureka.Enable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-deregister":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
+		runAction(cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-disable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
 		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
-			return eureka.Disable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex)
+		runAction(cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return eureka.Disable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-info":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)
 		})
 
 	case "service-registry-list":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func() (string, error) {
+		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.List(cliConnection, serviceRegistryInstanceName, authClient)
 		})
 
@@ -128,7 +130,7 @@ func getServiceRegistryInstanceName(args []string, operation string) string {
 
 }
 
-func runAction(cliConnection plugin.CliConnection, message string, action func() (string, error)) {
+func runAction(cliConnection plugin.CliConnection, message string, action func(progressWriter io.Writer) (string, error)) {
 	format.RunAction(cliConnection, message, action, os.Stdout, func() {
 		os.Exit(1)
 	})

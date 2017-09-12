@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 
+	"io"
+
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -41,7 +43,7 @@ var _ = Describe("Actions", func() {
 		var (
 			ok                = format.Bold(format.Green("OK"))
 			fakeCliConnection *pluginfakes.FakeCliConnection
-			action            func() (string, error)
+			action            format.Action
 			onFailure         func()
 			output            string
 		)
@@ -69,7 +71,7 @@ var _ = Describe("Actions", func() {
 				return "someUser", nil
 			}
 
-			action = func() (string, error) {
+			action = func(progressWriter io.Writer) (string, error) {
 				return "", nil
 			}
 
@@ -89,7 +91,7 @@ var _ = Describe("Actions", func() {
 
 		Context("when the action produces output", func() {
 			BeforeEach(func() {
-				action = func() (string, error) {
+				action = func(progressWriter io.Writer) (string, error) {
 					return "some output", nil
 				}
 			})
@@ -151,7 +153,7 @@ var _ = Describe("Actions", func() {
 
 		Context("when the action fails", func() {
 			BeforeEach(func() {
-				action = func() (string, error) {
+				action = func(progressWriter io.Writer) (string, error) {
 					return "", errors.New("Fake Error")
 				}
 			})
@@ -163,7 +165,7 @@ var _ = Describe("Actions", func() {
 
 		Context("when the action fails with a certificate error", func() {
 			BeforeEach(func() {
-				action = func() (string, error) {
+				action = func(progressWriter io.Writer) (string, error) {
 					return "", errors.New("Error: unknown authority")
 				}
 			})
