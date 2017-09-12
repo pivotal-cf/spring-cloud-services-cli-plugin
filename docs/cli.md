@@ -19,6 +19,20 @@ ALIAS:
 ```
 
 
+## `cf scs-stop`
+
+```
+NAME:
+   spring-cloud-service-stop - Stop a Spring Cloud Services service instance
+
+USAGE:
+      cf scs-stop SERVICE_INSTANCE_NAME
+
+ALIAS:
+   scs-stop
+```
+
+
 ## `cf service-registry-info`
 
 ```

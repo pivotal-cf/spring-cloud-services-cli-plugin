@@ -29,6 +29,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/pluginutil"
 )
 
@@ -69,6 +70,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		plainText := getPlainText(argsConsumer)
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, authClient)
+		})
+
+	case "spring-cloud-service-stop":
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return instance.Stop(cliConnection, serviceInstanceName, authClient, progressWriter)
 		})
 
 	case "service-registry-enable":
@@ -115,6 +122,10 @@ func getCfApplicationName(ac *cli.ArgConsumer) string {
 
 func getConfigServerInstanceName(ac *cli.ArgConsumer) string {
 	return ac.Consume(1, "configuration server instance name")
+}
+
+func getServiceInstanceName(ac *cli.ArgConsumer) string {
+	return ac.Consume(1, "service instance name")
 }
 
 func getPlainText(ac *cli.ArgConsumer) string {
@@ -171,6 +182,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "csev",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-stop",
+				HelpText: "Stop a Spring Cloud Services service instance",
+				Alias:    "scs-stop",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-stop SERVICE_INSTANCE_NAME",
 				},
 			},
 			{
