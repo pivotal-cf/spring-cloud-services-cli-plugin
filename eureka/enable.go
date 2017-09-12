@@ -19,13 +19,15 @@ package eureka
 import (
 	"fmt"
 
+	"io"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-func Enable(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
-	return OperateOnApplication(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, serviceutil.ServiceInstanceURL,
+func Enable(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer) (string, error) {
+	return OperateOnApplication(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, progressWriter, serviceutil.ServiceInstanceURL,
 		func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
 			// Delete any registration status override and assume the new status is UP until proven otherwise.
 			_, err := authClient.DoAuthenticatedDelete(fmt.Sprintf("%seureka/apps/%s/%s/status?value=UP", eurekaUrl, eurekaAppName, instanceId), accessToken)

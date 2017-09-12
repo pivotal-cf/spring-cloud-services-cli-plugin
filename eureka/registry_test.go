@@ -50,6 +50,7 @@ var _ = Describe("OperateOnApplication", func() {
 		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
 		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
 		resolverAccessToken string
+		progressWriter      *bytes.Buffer
 		output              string
 
 		fakeOperation      eureka.InstanceOperation
@@ -70,6 +71,7 @@ var _ = Describe("OperateOnApplication", func() {
 		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			return "https://eureka-dashboard-url/", nil
 		}
+		progressWriter = new(bytes.Buffer)
 
 		operationCallCount = 0
 		operationArgs = []operationArg{}
@@ -87,7 +89,7 @@ var _ = Describe("OperateOnApplication", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = eureka.OperateOnApplication(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, fakeResolver, fakeOperation)
+		output, err = eureka.OperateOnApplication(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, progressWriter, fakeResolver, fakeOperation)
 	})
 
 	It("should attempt to obtain an access token", func() {
@@ -185,13 +187,18 @@ var _ = Describe("OperateOnApplication", func() {
 				Expect(args.instanceId).To(Equal("instance-1"))
 			})
 
+			It("should log progress", func() {
+				Expect(progressWriter.String()).To(Equal(fmt.Sprintf("Processing service instance %s with index %s\n", format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("2")))))
+
+			})
+
 			Context("when the operation fails", func() {
 				BeforeEach(func() {
 					operationReturn = testErr
 				})
 
-				It("should return the error", func() {
-					Expect(err.Error()).To(ContainSubstring("Error processing service instance: failed"))
+				It("should return an error", func() {
+					Expect(err.Error()).To(ContainSubstring("Operation failed"))
 				})
 			})
 
@@ -279,13 +286,13 @@ var _ = Describe("OperateOnApplication", func() {
 					Expect(args.instanceId).To(Equal("instance-1"))
 				})
 
-				It("should inform the user that 2 instances have been processed", func() {
-					template := "Processed service instance %s with index %s\n"
+				It("should inform the user that 2 instances are being processed", func() {
+					template := "Processing service instance %s with index %s\n"
 					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
 					line2 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-3")), format.Bold(format.Cyan("3")))
 
-					Expect(output).To(Not(BeEmpty()))
-					Expect(output).To(ContainSubstring(line1 + line2))
+					Expect(output).To(BeEmpty()) // only output is progress indication
+					Expect(progressWriter.String()).To(ContainSubstring(line1 + line2))
 				})
 			})
 
@@ -379,11 +386,11 @@ var _ = Describe("OperateOnApplication", func() {
 				})
 
 				It("should inform the user about the instance deregistration", func() {
-					template := "Processed service instance %s with index %s\n"
+					template := "Processing service instance %s with index %s\n"
 					line1 := fmt.Sprintf(template, format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("1")))
 
-					Expect(output).To(Not(BeEmpty()))
-					Expect(output).To(ContainSubstring(line1))
+					Expect(output).To(BeEmpty()) // only output is progress indication
+					Expect(progressWriter.String()).To(ContainSubstring(line1))
 				})
 
 				Context("when the operation fails", func() {
@@ -392,7 +399,7 @@ var _ = Describe("OperateOnApplication", func() {
 					})
 
 					It("should return a suitable error", func() {
-						Expect(err).To(MatchError("Error processing service instance: failed"))
+						Expect(err).To(MatchError("Operation failed"))
 					})
 				})
 

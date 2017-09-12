@@ -28,6 +28,8 @@ import (
 
 	"strconv"
 
+	"io"
+
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
@@ -135,7 +137,7 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 
 type InstanceOperation func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error
 
-func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int,
+func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer,
 	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
 	operate InstanceOperation) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
@@ -152,30 +154,33 @@ func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName str
 	if err != nil {
 		return "", err
 	}
-	statusMessage := ""
-	statusTemplate := "Processed service instance %s with index %s\n"
+	statusTemplate := "Processing service instance %s with index %s\n"
+	success := true
 	if instanceIndex == nil { //Index is omitted, deregister all instances
-		var err error
 		for _, app := range apps {
-			err = operate(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
-			statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
-		}
-		if err != nil {
-			return "", fmt.Errorf("Error processing service instance: %s", err)
+			fmt.Fprintf(progressWriter, statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
+			err := operate(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
+			if err != nil {
+				success = false
+				fmt.Fprintf(progressWriter, "Failed: %s\n", err)
+			}
 		}
 	} else { //Instance ID provided, deregister a single instance
 		app, err := getRegisteredAppByInstanceIndex(apps, *instanceIndex)
 		if err != nil {
 			return "", err
 		}
+		fmt.Fprintf(progressWriter, statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
 		err = operate(authClient, accessToken, eureka, app.eurekaAppName, app.instanceId)
-		statusMessage += fmt.Sprintf(statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
-
 		if err != nil {
-			return "", fmt.Errorf("Error processing service instance: %s", err)
+			success = false
+			fmt.Fprintf(progressWriter, "Failed: %s\n", err)
 		}
 	}
-	return statusMessage, nil
+	if !success {
+		return "", errors.New("Operation failed")
+	}
+	return "", nil
 }
 
 func getRegisteredAppsWithCfAppName(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string, eureka string, cfAppName string) ([]eurekaAppRecord, error) {
