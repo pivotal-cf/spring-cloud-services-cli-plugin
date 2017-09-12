@@ -21,7 +21,7 @@ import "code.cloudfoundry.org/cli/cf/flags"
 
 const (
 	SkipSslValidationUsage = "Skip verification of the service endpoint. Not recommended!"
-	CfInstanceIndexUsage   = "Deregister a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
+	CfInstanceIndexUsage   = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
 )
 
 func ParseFlags(args []string) (bool, *int, []string, error) {

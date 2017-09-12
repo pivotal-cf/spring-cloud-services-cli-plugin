@@ -83,8 +83,8 @@ var _ = Describe("Actions", func() {
 		})
 
 		It("should print a suitable progress message", func() {
-			Expect(output).To(Equal(testMessage + fmt.Sprintf(" in org %s / space %s as %s...\n%s\n\n",
-				format.Bold(format.Cyan("someOrg")), format.Bold(format.Cyan("someSpace")), format.Bold(format.Cyan("someUser")), ok)))
+			Expect(output).To(Equal(fmt.Sprintf("%s in org %s / space %s as %s...\n%s\n\n",
+				testMessage, format.Bold(format.Cyan("someOrg")), format.Bold(format.Cyan("someSpace")), format.Bold(format.Cyan("someUser")), ok)))
 		})
 
 		Context("when the action produces output", func() {

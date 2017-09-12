@@ -24,10 +24,11 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-func Deregister(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
+func Enable(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authenticatedClient httpclient.AuthenticatedClient, instanceIndex *int) (string, error) {
 	return OperateOnApplication(cliConnection, srInstanceName, cfAppName, authenticatedClient, instanceIndex, serviceutil.ServiceInstanceURL,
 		func(authClient httpclient.AuthenticatedClient, accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
-			_, err := authClient.DoAuthenticatedDelete(fmt.Sprintf("%seureka/apps/%s/%s", eurekaUrl, eurekaAppName, instanceId), accessToken)
+			// Delete any registration status override and assume the new status is UP until proven otherwise.
+			_, err := authClient.DoAuthenticatedDelete(fmt.Sprintf("%seureka/apps/%s/%s/status?value=UP", eurekaUrl, eurekaAppName, instanceId), accessToken)
 			return err
 		})
 }

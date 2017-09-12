@@ -273,4 +273,65 @@ var _ = Describe("Authclient", func() {
 			})
 		})
 	})
+
+	Describe("DoAuthenticatedPut", func() {
+		BeforeEach(func() {
+			URL = testUrl
+			resp := &http.Response{StatusCode: http.StatusOK}
+			fakeClient.DoReturns(resp, nil)
+		})
+
+		JustBeforeEach(func() {
+			authClient := httpclient.NewAuthenticatedClient(fakeClient)
+			status, err = authClient.DoAuthenticatedPut(URL, testAccessToken)
+		})
+
+		Context("when the URL is invalid", func() {
+			BeforeEach(func() {
+				URL = ":"
+			})
+
+			It("should return a suitable error", func() {
+				Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
+			})
+		})
+
+		It("should send a request with the correct accept header", func() {
+			Expect(fakeClient.DoCallCount()).To(Equal(1))
+			req := fakeClient.DoArgsForCall(0)
+			Expect(req.Header.Get("Accept")).To(Equal("application/json"))
+		})
+
+		It("should send a request with the correct authorization header", func() {
+			Expect(fakeClient.DoCallCount()).To(Equal(1))
+			req := fakeClient.DoArgsForCall(0)
+			Expect(req.Header.Get("Authorization")).To(Equal(testBearerAccessToken))
+		})
+
+		It("should pass the status code back", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(status).To(Equal(http.StatusOK))
+		})
+
+		Context("when the request fails", func() {
+			BeforeEach(func() {
+				fakeClient.DoReturns(nil, testErr)
+			})
+
+			It("should produce an error", func() {
+				Expect(err).To(MatchError(fmt.Sprintf("Authenticated put of 'https://eureka.pivotal.io/auth/request' failed: %s", errMessage)))
+			})
+		})
+
+		Context("when the request returns a bad status", func() {
+			BeforeEach(func() {
+				resp := &http.Response{StatusCode: http.StatusNotFound, Status: "404 Not found"}
+				fakeClient.DoReturns(resp, nil)
+			})
+
+			It("should return the error", func() {
+				Expect(err).To(MatchError("Authenticated put of 'https://eureka.pivotal.io/auth/request' failed: 404 Not found"))
+			})
+		})
+	})
 })

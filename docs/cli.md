@@ -56,6 +56,24 @@ OPTIONS:
 ```
 
 
+## `cf service-registry-enable`
+
+```
+NAME:
+   service-registry-enable - Enable an application registered with a Spring Cloud Services service registry so that it is available for traffic
+
+USAGE:
+      cf service-registry-enable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME
+
+ALIAS:
+   sren
+
+OPTIONS:
+   --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
+   --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
+```
+
+
 ## `cf service-registry-deregister`
 
 ```
@@ -66,11 +84,29 @@ USAGE:
       cf service-registry-deregister SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME
 
 ALIAS:
-   srd
+   srdr
 
 OPTIONS:
    --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
-   --i/--cf-instance-index      Deregister a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
+   --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
+```
+
+
+## `cf service-registry-disable`
+
+```
+NAME:
+   service-registry-disable - Disable an application registered with a Spring Cloud Services service registry so that it is unavailable for traffic
+
+USAGE:
+      cf service-registry-disable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME
+
+ALIAS:
+   srda
+
+OPTIONS:
+   --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
+   --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
 
 
