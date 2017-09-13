@@ -16,9 +16,6 @@ USAGE:
 
 ALIAS:
    csev
-
-OPTIONS:
-   --skip-ssl-validation      Skip verification of the service endpoint. Not recommended!
 ```
 
 
@@ -33,9 +30,6 @@ USAGE:
 
 ALIAS:
    sri
-
-OPTIONS:
-   --skip-ssl-validation      Skip verification of the service endpoint. Not recommended!
 ```
 
 
@@ -50,9 +44,6 @@ USAGE:
 
 ALIAS:
    srl
-
-OPTIONS:
-   --skip-ssl-validation      Skip verification of the service endpoint. Not recommended!
 ```
 
 
@@ -69,7 +60,6 @@ ALIAS:
    sren
 
 OPTIONS:
-   --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
    --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
 
@@ -87,7 +77,6 @@ ALIAS:
    srdr
 
 OPTIONS:
-   --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
    --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
 
@@ -105,7 +94,6 @@ ALIAS:
    srda
 
 OPTIONS:
-   --skip-ssl-validation        Skip verification of the service endpoint. Not recommended!
    --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
 

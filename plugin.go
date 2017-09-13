@@ -40,12 +40,20 @@ var pluginVersion = "invalid version - plugin was not built correctly"
 type Plugin struct{}
 
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
-	skipSslValidation, cfInstanceIndex, positionalArgs, err := cli.ParseFlags(args)
+	cfInstanceIndex, positionalArgs, err := cli.ParseFlags(args)
 	if err != nil {
 		format.Diagnose(string(err.Error()), os.Stderr, func() {
 			os.Exit(1)
 		})
 	}
+
+	skipSslValidation, err := cliConnection.IsSSLDisabled()
+	if err != nil {
+		format.Diagnose(string(err.Error()), os.Stderr, func() {
+			os.Exit(1)
+		})
+	}
+
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: skipSslValidation},
 	}
@@ -96,7 +104,6 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 
 	default:
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
-
 	}
 }
 
@@ -112,7 +119,6 @@ func getConfigServerInstanceName(args []string, operation string) string {
 		diagnoseWithHelp("Configuration server instance name not specified.", operation)
 	}
 	return args[1]
-
 }
 
 func getPlainText(args []string, operation string) string {
@@ -171,8 +177,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Encrypt a string using a Spring Cloud Services configuration server",
 				Alias:    "csev",
 				UsageDetails: plugin.Usage{
-					Usage:   "   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage},
+					Usage: "   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT",
 				},
 			},
 			{
@@ -181,7 +186,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "srdr",
 				UsageDetails: plugin.Usage{
 					Usage:   "   cf service-registry-deregister SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
+					Options: map[string]string{"-i/--cf-instance-index": cli.CfInstanceIndexUsage},
 				},
 			},
 			{
@@ -190,7 +195,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "srda",
 				UsageDetails: plugin.Usage{
 					Usage:   "   cf service-registry-disable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
+					Options: map[string]string{"-i/--cf-instance-index": cli.CfInstanceIndexUsage},
 				},
 			},
 			{
@@ -199,7 +204,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "sren",
 				UsageDetails: plugin.Usage{
 					Usage:   "   cf service-registry-enable SERVICE_REGISTRY_INSTANCE_NAME CF_APPLICATION_NAME",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage, "-i/--cf-instance-index": cli.CfInstanceIndexUsage},
+					Options: map[string]string{"-i/--cf-instance-index": cli.CfInstanceIndexUsage},
 				},
 			},
 			{
@@ -207,8 +212,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Display Spring Cloud Services service registry instance information",
 				Alias:    "sri",
 				UsageDetails: plugin.Usage{
-					Usage:   "   cf service-registry-info SERVICE_REGISTRY_INSTANCE_NAME",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage},
+					Usage: "   cf service-registry-info SERVICE_REGISTRY_INSTANCE_NAME",
 				},
 			},
 			{
@@ -216,8 +220,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Display all applications registered with a Spring Cloud Services service registry",
 				Alias:    "srl",
 				UsageDetails: plugin.Usage{
-					Usage:   "   cf service-registry-list SERVICE_REGISTRY_INSTANCE_NAME",
-					Options: map[string]string{"--skip-ssl-validation": cli.SkipSslValidationUsage},
+					Usage: "   cf service-registry-list SERVICE_REGISTRY_INSTANCE_NAME",
 				},
 			},
 		},

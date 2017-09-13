@@ -80,7 +80,7 @@ func Diagnose(message string, writer io.Writer, onFailure func()) {
 
 	hint := ""
 	if strings.Contains(message, "unknown authority") {
-		hint = "Hint: try --skip-ssl-validation at your own risk.\n"
+		hint = "\nTIP: Use 'cf api --skip-ssl-validation' to continue with an insecure API endpoint\n"
 	}
 
 	fmt.Fprintf(writer, "%s\n%s", message, hint)

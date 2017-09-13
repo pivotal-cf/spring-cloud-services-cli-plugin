@@ -27,13 +27,12 @@ var _ = Describe("Flags", func() {
 	var (
 		args           = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "-i", "1", "-i", "2", "-i", "3"}
 		instanceIdx    *int
-		sslNoVerify    bool
 		positionalArgs []string
 		err            error
 	)
 
 	JustBeforeEach(func() {
-		sslNoVerify, instanceIdx, positionalArgs, err = cli.ParseFlags(args)
+		instanceIdx, positionalArgs, err = cli.ParseFlags(args)
 	})
 
 	Context("when duplicate flags are passed on command line", func() {
@@ -56,31 +55,10 @@ var _ = Describe("Flags", func() {
 		})
 	})
 
-	Context("when the skip ssl validation flag is set", func() {
-
-		BeforeEach(func() {
-			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation"}
-		})
-
-		It("should capture the flags value", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(sslNoVerify).To(BeTrue())
-		})
-
-		Context("when positional arguments are used by the command", func() {
-
-			It("should capture an array of positional arguments", func() {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(len(positionalArgs)).To(Equal(4))
-			})
-		})
-
-	})
-
 	Context("when no flag is passed for instance index", func() {
 
 		BeforeEach(func() {
-			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation"}
+			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1"}
 		})
 
 		It("should be parsed as nil", func() {
@@ -92,7 +70,7 @@ var _ = Describe("Flags", func() {
 	Context("when a string value is passed for instance index", func() {
 
 		BeforeEach(func() {
-			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "--skip-ssl-validation", "-i", "one"}
+			args = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "-i", "one"}
 		})
 
 		It("should raise a suitable error", func() {
