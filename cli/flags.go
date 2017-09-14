@@ -19,10 +19,10 @@ package cli
 import "fmt"
 import "code.cloudfoundry.org/cli/cf/flags"
 
-const	CfInstanceIndexUsage   = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
+const CfInstanceIndexUsage = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
 
 func ParseFlags(args []string) (*int, []string, error) {
-	const	instanceIndexFlagName = "cf-instance-index"
+	const instanceIndexFlagName = "cf-instance-index"
 
 	fc := flags.New()
 	//New flag methods take arguments: name, short_name and usage of the string flag
