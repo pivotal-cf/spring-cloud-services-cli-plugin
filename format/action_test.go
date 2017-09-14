@@ -37,7 +37,7 @@ var _ = Describe("Actions", func() {
 		const (
 			testMessage = "some message"
 			failMessage = "FAILED"
-			certHint    = "Hint: try --skip-ssl-validation at your own risk.\n"
+			certHint    = "\nTIP: Use 'cf api --skip-ssl-validation' to continue with an insecure API endpoint\n"
 		)
 
 		var (
@@ -180,7 +180,7 @@ var _ = Describe("Actions", func() {
 
 		const (
 			failMessage = "FAILED"
-			certHint    = "Hint: try --skip-ssl-validation at your own risk.\n"
+			certHint    = "TIP: Use 'cf api --skip-ssl-validation' to continue with an insecure API endpoint\n"
 		)
 
 		var (

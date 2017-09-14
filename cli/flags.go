@@ -19,26 +19,18 @@ package cli
 import "fmt"
 import "code.cloudfoundry.org/cli/cf/flags"
 
-const (
-	SkipSslValidationUsage = "Skip verification of the service endpoint. Not recommended!"
-	CfInstanceIndexUsage   = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
-)
+const	CfInstanceIndexUsage   = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
 
-func ParseFlags(args []string) (bool, *int, []string, error) {
-	const (
-		sslValidationFlagName = "skip-ssl-validation"
-		instanceIndexFlagName = "cf-instance-index"
-	)
+func ParseFlags(args []string) (*int, []string, error) {
+	const	instanceIndexFlagName = "cf-instance-index"
 
 	fc := flags.New()
 	//New flag methods take arguments: name, short_name and usage of the string flag
-	fc.NewBoolFlag(sslValidationFlagName, sslValidationFlagName, SkipSslValidationUsage)
 	fc.NewIntFlag(instanceIndexFlagName, "i", CfInstanceIndexUsage)
 	err := fc.Parse(args...)
 	if err != nil {
-		return false, nil, nil, fmt.Errorf("Error parsing arguments: %s", err)
+		return nil, nil, fmt.Errorf("Error parsing arguments: %s", err)
 	}
-	skipSslValidation := fc.Bool(sslValidationFlagName)
 	//Use a pointer instead of value because 0 initialized int is a valid instance index
 	var cfInstanceIndex *int
 	if fc.IsSet(instanceIndexFlagName) {
@@ -46,5 +38,5 @@ func ParseFlags(args []string) (bool, *int, []string, error) {
 		idx = fc.Int(instanceIndexFlagName)
 		cfInstanceIndex = &idx
 	}
-	return skipSslValidation, cfInstanceIndex, fc.Args(), nil
+	return cfInstanceIndex, fc.Args(), nil
 }
