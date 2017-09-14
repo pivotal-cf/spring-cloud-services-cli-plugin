@@ -26,6 +26,7 @@ import (
 	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	"github.com/fatih/color"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
@@ -64,6 +65,8 @@ var _ = Describe("OperateOnApplication", func() {
 	)
 
 	BeforeEach(func() {
+		color.NoColor = false // ensure predictable colour behaviour independent of test environment
+
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
@@ -189,7 +192,6 @@ var _ = Describe("OperateOnApplication", func() {
 
 			It("should log progress", func() {
 				Expect(progressWriter.String()).To(Equal(fmt.Sprintf("Processing service instance %s with index %s\n", format.Bold(format.Cyan("APP-1")), format.Bold(format.Cyan("2")))))
-
 			})
 
 			Context("when the operation fails", func() {

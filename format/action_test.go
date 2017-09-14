@@ -27,6 +27,7 @@ import (
 
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	"github.com/fatih/color"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -41,7 +42,7 @@ var _ = Describe("Actions", func() {
 		)
 
 		var (
-			ok                = format.Bold(format.Green("OK"))
+			ok                string
 			fakeCliConnection *pluginfakes.FakeCliConnection
 			action            format.Action
 			onFailure         func()
@@ -49,6 +50,10 @@ var _ = Describe("Actions", func() {
 		)
 
 		BeforeEach(func() {
+			color.NoColor = false // ensure predictable colour behaviour independent of test environment
+
+			ok = format.Bold(format.Green("OK"))
+
 			fakeCliConnection = &pluginfakes.FakeCliConnection{}
 
 			fakeCliConnection.GetCurrentOrgStub = func() (plugin_models.Organization, error) {
