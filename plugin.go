@@ -60,45 +60,47 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	client := &http.Client{Transport: tr}
 	authClient := httpclient.NewAuthenticatedClient(client)
 
+	argsConsumer := cli.NewArgConsumer(positionalArgs, diagnoseWithHelp)
+
 	switch args[0] {
 
 	case "config-server-encrypt-value":
-		configServerInstanceName := getConfigServerInstanceName(positionalArgs, args[0])
-		plainText := getPlainText(positionalArgs, args[0])
-		runActionQuietly(cliConnection, func() (string, error) {
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		plainText := getPlainText(argsConsumer)
+		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, authClient)
 		})
 
 	case "service-registry-enable":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
+		cfApplicationName := getCfApplicationName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.Enable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-deregister":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
+		cfApplicationName := getCfApplicationName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-disable":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		cfApplicationName := getCfApplicationName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
+		cfApplicationName := getCfApplicationName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.Disable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
 		})
 
 	case "service-registry-info":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Getting information for service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.Info(cliConnection, client, serviceRegistryInstanceName, authClient)
 		})
 
 	case "service-registry-list":
-		serviceRegistryInstanceName := getServiceRegistryInstanceName(positionalArgs, args[0])
-		runAction(cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
+		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Listing service registry %s", format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return eureka.List(cliConnection, serviceRegistryInstanceName, authClient)
 		})
 
@@ -107,49 +109,40 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	}
 }
 
-func getCfApplicationName(args []string, operation string) string {
-	if len(args) < 3 || args[2] == "" {
-		diagnoseWithHelp("cf application name not specified.", operation)
-	}
-	return args[2]
+func getCfApplicationName(ac *cli.ArgConsumer) string {
+	return ac.Consume(2, "cf application name")
 }
 
-func getConfigServerInstanceName(args []string, operation string) string {
-	if len(args) < 2 || args[1] == "" {
-		diagnoseWithHelp("Configuration server instance name not specified.", operation)
-	}
-	return args[1]
+func getConfigServerInstanceName(ac *cli.ArgConsumer) string {
+	return ac.Consume(1, "configuration server instance name")
 }
 
-func getPlainText(args []string, operation string) string {
-	if len(args) < 3 || args[2] == "" {
-		diagnoseWithHelp("string to encrypt not specified.", operation)
-	}
-	return args[2]
+func getPlainText(ac *cli.ArgConsumer) string {
+	return ac.Consume(2, "string to encrypt")
 }
 
-func getServiceRegistryInstanceName(args []string, operation string) string {
-	if len(args) < 2 || args[1] == "" {
-		diagnoseWithHelp("Service registry instance name not specified.", operation)
-	}
-	return args[1]
-
+func getServiceRegistryInstanceName(ac *cli.ArgConsumer) string {
+	return ac.Consume(1, "service registry instance name")
 }
 
-func runAction(cliConnection plugin.CliConnection, message string, action func(progressWriter io.Writer) (string, error)) {
+func runAction(argsConsumer *cli.ArgConsumer, cliConnection plugin.CliConnection, message string, action func(progressWriter io.Writer) (string, error)) {
+	argsConsumer.CheckAllConsumed()
+
 	format.RunAction(cliConnection, message, action, os.Stdout, func() {
 		os.Exit(1)
 	})
 }
 
-func runActionQuietly(cliConnection plugin.CliConnection, action func() (string, error)) {
+func runActionQuietly(argsConsumer *cli.ArgConsumer, cliConnection plugin.CliConnection, action func() (string, error)) {
+	argsConsumer.CheckAllConsumed()
+
 	format.RunActionQuietly(cliConnection, action, os.Stdout, func() {
 		os.Exit(1)
 	})
 }
 
-func diagnoseWithHelp(message string, operation string) {
-	fmt.Printf("%s See 'cf help %s.'\n", message, operation)
+func diagnoseWithHelp(message string, command string) {
+	fmt.Printf("%s See 'cf help %s'.\n", message, command)
 	os.Exit(1)
 }
 
