@@ -135,7 +135,7 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 
 // Utility for operating on an application instance in the service registry
 
-type InstanceOperation func(accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error
+type InstanceOperation func(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error
 
 func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer,
 	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
@@ -159,7 +159,7 @@ func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName str
 	if instanceIndex == nil { //Index is omitted, deregister all instances
 		for _, app := range apps {
 			fmt.Fprintf(progressWriter, statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
-			err := operate(accessToken, eureka, app.eurekaAppName, app.instanceId)
+			err := operate(authClient, eureka, app.eurekaAppName, app.instanceId, accessToken)
 			if err != nil {
 				success = false
 				fmt.Fprintf(progressWriter, "Failed: %s\n", err)
@@ -171,7 +171,7 @@ func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName str
 			return "", err
 		}
 		fmt.Fprintf(progressWriter, statusTemplate, format.Bold(format.Cyan(app.eurekaAppName)), format.Bold(format.Cyan(app.instanceIndex)))
-		err = operate(accessToken, eureka, app.eurekaAppName, app.instanceId)
+		err = operate(authClient, eureka, app.eurekaAppName, app.instanceId, accessToken)
 		if err != nil {
 			success = false
 			fmt.Fprintf(progressWriter, "Failed: %s\n", err)

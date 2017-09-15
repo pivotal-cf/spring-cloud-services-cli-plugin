@@ -18,18 +18,12 @@ package eureka
 
 import (
 	"fmt"
-	"io"
 
-	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-func Disable(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer) (string, error) {
-	return OperateOnApplication(cliConnection, srInstanceName, cfAppName, authClient, instanceIndex, progressWriter, serviceutil.ServiceInstanceURL,
-		func(accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
-			// Override the registration status to be OUT_OF_SERVICE.
-			_, err := authClient.DoAuthenticatedPut(fmt.Sprintf("%seureka/apps/%s/%s/status?value=OUT_OF_SERVICE", eurekaUrl, eurekaAppName, instanceId), accessToken)
-			return err
-		})
+func Disable(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error {
+	// Override the registration status to be OUT_OF_SERVICE.
+	_, err := authClient.DoAuthenticatedPut(fmt.Sprintf("%seureka/apps/%s/%s/status?value=OUT_OF_SERVICE", eurekaUrl, eurekaAppName, instanceId), accessToken)
+	return err
 }
