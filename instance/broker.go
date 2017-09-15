@@ -17,8 +17,6 @@
 package instance
 
 import (
-	"io"
-
 	"fmt"
 	"net/url"
 	"strings"
@@ -28,32 +26,41 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-type Operation func(serviceInstanceAdminURL string, accessToken string) (string, error)
+type Operation func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
 
-func OperateViaServiceBroker(serviceInstanceName string, cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, progressWriter io.Writer, operation Operation) (string, error) {
-	accessToken, err := cfutil.GetToken(cliConnection)
+func RunOperation(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, operation Operation) (string, error) {
+	serviceInstanceAdminURL, accessToken, err := accessServiceBroker(serviceInstanceName, cliConnection)
 	if err != nil {
 		return "", err
+	}
+
+	return operation(authClient, serviceInstanceAdminURL, accessToken)
+}
+
+func accessServiceBroker(serviceInstanceName string, cliConnection plugin.CliConnection) (string, string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
+	if err != nil {
+		return "", "", err
 	}
 
 	serviceModel, err := cliConnection.GetService(serviceInstanceName)
 	if err != nil {
-		return "", fmt.Errorf("Service instance not found: %s", err)
+		return "", "", fmt.Errorf("Service instance not found: %s", err)
 	}
 
 	parsedUrl, err := url.Parse(serviceModel.DashboardUrl)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	path := parsedUrl.Path
 
 	segments := strings.Split(path, "/")
 	if len(segments) == 0 || (len(segments) == 1 && segments[0] == "") {
-		return "", fmt.Errorf("path of %s has no segments", serviceModel.DashboardUrl)
+		return "", "", fmt.Errorf("path of %s has no segments", serviceModel.DashboardUrl)
 	}
 	guid := segments[len(segments)-1]
 
 	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s", guid)
 
-	return operation(parsedUrl.String(), accessToken)
+	return parsedUrl.String(), accessToken, nil
 }

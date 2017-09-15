@@ -75,7 +75,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	case "spring-cloud-service-stop":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return instance.Stop(cliConnection, serviceInstanceName, authClient, progressWriter)
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Stop)
 		})
 
 	case "service-registry-enable":
