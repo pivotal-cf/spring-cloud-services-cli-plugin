@@ -19,16 +19,10 @@ package instance
 import (
 	"fmt"
 
-	"io"
-
-	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-func Stop(cliConnection plugin.CliConnection, serviceInstanceName string, authenticatedClient httpclient.AuthenticatedClient, progressWriter io.Writer) (string, error) {
-	return OperateViaServiceBroker(serviceInstanceName, cliConnection, authenticatedClient, progressWriter,
-		func(serviceInstanceAdminURL string, accessToken string) (string, error) {
-			_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?stop", serviceInstanceAdminURL), accessToken)
-			return "", err
-		})
+func Stop(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?stop", serviceInstanceAdminURL), accessToken)
+	return "", err
 }

@@ -17,19 +17,18 @@
 package instance_test
 
 import (
-	"bytes"
 	"errors"
-	"io/ioutil"
 
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-var _ = Describe("OperateViaServiceBroker", func() {
+var _ = Describe("RunOperation", func() {
 
 	const testAccessToken = "someaccesstoken"
 
@@ -40,8 +39,7 @@ var _ = Describe("OperateViaServiceBroker", func() {
 
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		progressWriter    *bytes.Buffer
+		fakeAuthClient          *httpclientfakes.FakeAuthenticatedClient
 		output            string
 
 		fakeOperation      instance.Operation
@@ -62,14 +60,12 @@ var _ = Describe("OperateViaServiceBroker", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
-		progressWriter = new(bytes.Buffer)
 
 		operationCallCount = 0
 		operationArgs = []operationArg{}
 		operationStringReturn = ""
 		operationErrReturn = nil
-		fakeOperation = func(serviceInstanceAdminURL string, accessToken string) (string, error) {
+		fakeOperation = func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
 			operationCallCount++
 			operationArgs = append(operationArgs, operationArg{
 				serviceInstanceAdminURL: serviceInstanceAdminURL,
@@ -85,7 +81,7 @@ var _ = Describe("OperateViaServiceBroker", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.OperateViaServiceBroker(serviceInstanceName, fakeCliConnection, fakeAuthClient, progressWriter, fakeOperation)
+		output, err = instance.RunOperation(fakeCliConnection, fakeAuthClient, serviceInstanceName, fakeOperation)
 	})
 
 	It("should attempt to obtain an access token", func() {
