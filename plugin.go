@@ -31,6 +31,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/pluginutil"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
 // Plugin version. Substitute "<major>.<minor>.<build>" at build time, e.g. using -ldflags='-X main.pluginVersion=1.2.3'
@@ -82,21 +83,21 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Enabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return eureka.Enable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
+			return eureka.OperateOnApplication(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter, serviceutil.ServiceInstanceURL, eureka.Enable)
 		})
 
 	case "service-registry-deregister":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Deregistering application %s from service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return eureka.Deregister(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
+			return eureka.OperateOnApplication(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter, serviceutil.ServiceInstanceURL, eureka.Deregister)
 		})
 
 	case "service-registry-disable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Disabling application %s in service registry %s", format.Bold(format.Cyan(cfApplicationName)), format.Bold(format.Cyan(serviceRegistryInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return eureka.Disable(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter)
+			return eureka.OperateOnApplication(cliConnection, serviceRegistryInstanceName, cfApplicationName, authClient, cfInstanceIndex, progressWriter, serviceutil.ServiceInstanceURL, eureka.Disable)
 		})
 
 	case "service-registry-info":

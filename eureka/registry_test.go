@@ -79,7 +79,7 @@ var _ = Describe("OperateOnApplication", func() {
 		operationCallCount = 0
 		operationArgs = []operationArg{}
 		operationReturn = nil
-		fakeOperation = func(accessToken string, eurekaUrl string, eurekaAppName string, instanceId string) error {
+		fakeOperation = func(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error {
 			operationCallCount++
 			operationArgs = append(operationArgs, operationArg{
 				accessToken:   accessToken,
