@@ -296,12 +296,6 @@ var _ = Describe("Authclient", func() {
 			})
 		})
 
-		It("should send a request with the correct accept header", func() {
-			Expect(fakeClient.DoCallCount()).To(Equal(1))
-			req := fakeClient.DoArgsForCall(0)
-			Expect(req.Header.Get("Accept")).To(Equal("application/json"))
-		})
-
 		It("should send a request with the correct authorization header", func() {
 			Expect(fakeClient.DoCallCount()).To(Equal(1))
 			req := fakeClient.DoArgsForCall(0)

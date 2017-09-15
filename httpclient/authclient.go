@@ -105,7 +105,6 @@ func (c *authenticatedClient) DoAuthenticatedPut(url string, accessToken string)
 		return 0, fmt.Errorf("Request creation error: %s", err)
 	}
 
-	req.Header.Add("Accept", "application/json")
 	addAuthorizationHeader(req, accessToken)
 	resp, err := c.Httpclient.Do(req)
 	if err != nil {
