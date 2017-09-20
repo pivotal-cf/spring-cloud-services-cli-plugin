@@ -79,6 +79,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Stop)
 		})
 
+	case "spring-cloud-service-start":
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Starting service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Start)
+		})
+
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
@@ -191,6 +197,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "scs-stop",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf scs-stop SERVICE_INSTANCE_NAME",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-start",
+				HelpText: "Start a Spring Cloud Services service instance",
+				Alias:    "scs-start",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-start SERVICE_INSTANCE_NAME",
 				},
 			},
 			{
