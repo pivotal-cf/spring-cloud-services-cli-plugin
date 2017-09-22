@@ -85,6 +85,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Start)
 		})
 
+	case "spring-cloud-service-restart":
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Restarting service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Restart)
+		})
+
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
@@ -205,6 +211,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "scs-start",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf scs-start SERVICE_INSTANCE_NAME",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-restart",
+				HelpText: "Restart a Spring Cloud Services service instance",
+				Alias:    "scs-restart",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-restart SERVICE_INSTANCE_NAME",
 				},
 			},
 			{

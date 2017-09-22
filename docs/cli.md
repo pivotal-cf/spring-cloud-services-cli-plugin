@@ -32,7 +32,7 @@ ALIAS:
    scs-stop
 ```
 
-## `cf scs-stop`
+## `cf scs-start`
 
 ```
 NAME:
@@ -43,6 +43,19 @@ USAGE:
 
 ALIAS:
    scs-start
+```
+
+## `cf scs-restart`
+
+```
+NAME:
+   spring-cloud-service-restart - Restart a Spring Cloud Services service instance
+
+USAGE:
+      cf scs-restart SERVICE_INSTANCE_NAME
+
+ALIAS:
+   scs-restart
 ```
 
 
