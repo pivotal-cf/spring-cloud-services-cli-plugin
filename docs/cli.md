@@ -58,6 +58,19 @@ ALIAS:
    scs-restart
 ```
 
+## `cf scs-restage`
+
+```
+NAME:
+   spring-cloud-service-restage - Restage a Spring Cloud Services service instance
+
+USAGE:
+      cf scs-restage SERVICE_INSTANCE_NAME
+
+ALIAS:
+   scs-restage
+```
+
 
 ## `cf service-registry-info`
 

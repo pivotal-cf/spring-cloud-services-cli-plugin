@@ -5,9 +5,9 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 )
 
-var _ = DescribeCommandTest("Stop", "stop",
+var _ = DescribeCommandTest("Start", "start",
 	func(fakeAuthClient *httpclientfakes.FakeAuthenticatedClient, serviceInstanceAdminURL string,
 		accessToken string) (string, error) {
 
-		return instance.Stop(fakeAuthClient, serviceInstanceAdminURL, accessToken)
+		return instance.Start(fakeAuthClient, serviceInstanceAdminURL, accessToken)
 	})
