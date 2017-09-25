@@ -4,7 +4,7 @@ if [ ! -z ${DEBUG} ]; then
     set -x
 fi
 
-declare -a SCS_COMMANDS=("config-server-encrypt-value" "spring-cloud-service-stop" "spring-cloud-service-start" "spring-cloud-service-restart" "service-registry-info" "service-registry-list" "service-registry-enable" "service-registry-deregister" "service-registry-disable")
+declare -a SCS_COMMANDS=("config-server-encrypt-value" "spring-cloud-service-stop" "spring-cloud-service-start" "spring-cloud-service-restart" "spring-cloud-service-restage" "service-registry-info" "service-registry-list" "service-registry-enable" "service-registry-deregister" "service-registry-disable")
 CMD_DOC_FILENAME=cli.md
 
 echo "# Spring Cloud Services CF CLI Plugin Docs

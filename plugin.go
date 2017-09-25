@@ -91,6 +91,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Restart)
 		})
 
+	case "spring-cloud-service-restage":
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Restaging service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Restage)
+		})
+
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
@@ -219,6 +225,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "scs-restart",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf scs-restart SERVICE_INSTANCE_NAME",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-restage",
+				HelpText: "Restage a Spring Cloud Services service instance",
+				Alias:    "scs-restage",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-restage SERVICE_INSTANCE_NAME",
 				},
 			},
 			{
