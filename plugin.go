@@ -97,6 +97,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Restage)
 		})
 
+	case "spring-cloud-service-view":
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Viewing service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.View)
+		})
+
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
@@ -233,6 +239,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "scs-restage",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf scs-restage SERVICE_INSTANCE_NAME",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-view",
+				HelpText: "Display health and status for a Spring Cloud Services service instance",
+				Alias:    "scs-view",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-view SERVICE_INSTANCE_NAME",
 				},
 			},
 			{

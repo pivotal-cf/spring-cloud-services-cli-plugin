@@ -3,6 +3,12 @@
 	"ignore": "",
 	"package": [
 		{
+			"checksumSHA1": "BrLvnUZYS3qao0fHKA0XpFL8wA0=",
+			"path": "code.cloudfoundry.org/bytefmt",
+			"revision": "f4415fafc5619dd75599a54a7c91fb3948ad58bd",
+			"revisionTime": "2017-04-28T00:31:08Z"
+		},
+		{
 			"checksumSHA1": "rvaiyC5SczJJkhEN1myZVgQgsJw=",
 			"path": "code.cloudfoundry.org/cli/cf/flags",
 			"revision": "4bf6772d189913f03d6ca5e597f2d88f4a344717",
