@@ -9,6 +9,10 @@ import (
 	"bytes"
 	"io/ioutil"
 
+	"fmt"
+
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
@@ -137,21 +141,21 @@ var _ = Describe("View", func() {
 		})
 
 		It("should print the expected output", func() {
-			Expect(output).To(Equal(`
+			Expect(output).To(Equal(fmt.Sprintf(`
 backing app name: eureka-4bf65bd3-b587-4eec-94a0-7023cb94dff8
 requested state:  started
 instances:        1/1
 usage:            1G x 1 instances
 routes:           eureka-4bf65bd3-b587-4eec-94a0-7023cb94dff8.olive.springapps.io
-last uploaded:    Mon 26 Jun 17:22:57 BST 2017
+last uploaded:    %s
 stack:            cflinuxfs2
 buildpack:        container-certificate-trust-store=2.0.0_RELEASE java-buildpack=v3.13-offline-https://github.com/cloudfoundry/java-buildpack.git#03b493f java-main open
                   -jdk-like-jre=1.8.0_121 open-jdk-like-memory-calculator=2.0.2_RELEASE spring-auto-reconfiguration=1.10...
 
      state     since                  cpu    memory       disk           details
-#0   running   2017-07-22T00:18:42Z   0.2%   991M of 1G   186.5M of 1G   DETAILS
-#1   starting  2049-03-30T02:05:22Z   100.0% 1.9G of 1.9G 281.8M of 1.9G DETAILS
-`))
+#0   running   2017-07-22T00:18:42Z   0.2%%   991M of 1G   186.5M of 1G   DETAILS
+#1   starting  2049-03-30T02:05:22Z   100.0%% 1.9G of 1.9G 281.8M of 1.9G DETAILS
+`, time.Unix(1498494177, 0).Local().Format("Mon 02 Jan 15:04:05 MST 2006"))))
 			Expect(err).NotTo(HaveOccurred())
 		})
 	})
