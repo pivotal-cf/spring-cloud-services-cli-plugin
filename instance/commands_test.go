@@ -6,18 +6,18 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"fmt"
+
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-func DescribeCommandTest(name string, command string,
+func CommandTestBody(command string,
 	commandClosure func(
 		fakeAuthClient *httpclientfakes.FakeAuthenticatedClient,
 		serviceInstanceAdminURL string,
-		accessToken string) (string, error)) bool {
+		accessToken string) (string, error)) func() {
 
-	return Describe(name, func() {
-
+	return func() {
 		const testAccessToken = "someaccesstoken"
 
 		var (
@@ -60,5 +60,5 @@ func DescribeCommandTest(name string, command string,
 				Expect(err).To(Equal(testError))
 			})
 		})
-	})
+	}
 }
