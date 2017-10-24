@@ -193,7 +193,7 @@ func failInstallation(format string, inserts ...interface{}) {
 
 func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
-		Name:    "SCSPlugin",
+		Name:    "spring-cloud-services",
 		Version: pluginutil.ParsePluginVersion(pluginVersion, failInstallation),
 		MinCliVersion: plugin.VersionType{
 			Major: 6,

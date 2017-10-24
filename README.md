@@ -37,7 +37,7 @@ The plugin's commands may then be listed by issuing `cf help`.
 
 To update the plugin, uninstall it as follows and then re-install the plugin as above:
 ```bash
-$ cf uninstall-plugin SCSPlugin
+$ cf uninstall-plugin spring-cloud-services
 ```
 
 ## Command docs
