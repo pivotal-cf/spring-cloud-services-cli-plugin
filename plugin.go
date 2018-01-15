@@ -42,7 +42,15 @@ var pluginVersion = "invalid version - plugin was not built correctly"
 type Plugin struct{}
 
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
-	cfInstanceIndex, positionalArgs, err := cli.ParseFlags(args)
+	var cfInstanceIndex *int = nil
+	var positionalArgs []string
+	var err error
+	if args[0] == "config-server-encrypt-value" {
+		// Enable encryption of a value starting with "-".
+		positionalArgs, err = cli.ParseNoFlags(args)
+	} else {
+		cfInstanceIndex, positionalArgs, err = cli.ParseFlags(args)
+	}
 	if err != nil {
 		format.Diagnose(string(err.Error()), os.Stderr, func() {
 			os.Exit(1)
@@ -206,7 +214,10 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Encrypt a string using a Spring Cloud Services configuration server",
 				Alias:    "csev",
 				UsageDetails: plugin.Usage{
-					Usage: "   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT",
+					Usage: `   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT
+
+Note: if VALUE_TO_ENCRYPT contains characters that are special to the shell, it may be necessary
+to use escape characters or quotes. Refer to the shell's man page for details.`,
 				},
 			},
 			{

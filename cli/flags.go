@@ -40,3 +40,13 @@ func ParseFlags(args []string) (*int, []string, error) {
 	}
 	return cfInstanceIndex, fc.Args(), nil
 }
+
+func ParseNoFlags(args []string) ([]string, error) {
+	fc := flags.New()
+	fc.SkipFlagParsing(true)
+	err := fc.Parse(args...)
+	if err != nil {
+		return nil, fmt.Errorf("Error parsing arguments: %s", err)
+	}
+	return fc.Args(), nil
+}
