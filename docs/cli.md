@@ -14,12 +14,15 @@ NAME:
 USAGE:
       cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT
 
+Note: if VALUE_TO_ENCRYPT contains characters that are special to the shell, it may be necessary
+to use escape characters or quotes. Refer to the shell's man page for details.
+
 ALIAS:
    csev
 ```
 
 
-## `cf scs-stop`
+## `cf spring-cloud-service-stop`
 
 ```
 NAME:
@@ -32,7 +35,8 @@ ALIAS:
    scs-stop
 ```
 
-## `cf scs-start`
+
+## `cf spring-cloud-service-start`
 
 ```
 NAME:
@@ -45,7 +49,8 @@ ALIAS:
    scs-start
 ```
 
-## `cf scs-restart`
+
+## `cf spring-cloud-service-restart`
 
 ```
 NAME:
@@ -58,7 +63,8 @@ ALIAS:
    scs-restart
 ```
 
-## `cf scs-restage`
+
+## `cf spring-cloud-service-restage`
 
 ```
 NAME:

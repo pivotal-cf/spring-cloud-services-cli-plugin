@@ -77,4 +77,20 @@ var _ = Describe("Flags", func() {
 			Expect(err).To(MatchError("Error parsing arguments: Value for flag 'cf-instance-index' must be an integer"))
 		})
 	})
+
+	Describe("ParseNoFlags", func() {
+		var noFlagsPositionalArgs []string
+
+		BeforeEach(func() {
+			args = []string{"cf", "csev", "-x", "y", "-z"}
+		})
+
+		JustBeforeEach(func() {
+			noFlagsPositionalArgs, err = cli.ParseNoFlags(args)
+		})
+
+		It("should not treat an argument with a leading hyphen as a flag", func() {
+			Expect(noFlagsPositionalArgs).To(ConsistOf("cf", "csev", "-x", "y", "-z"))
+		})
+	})
 })
