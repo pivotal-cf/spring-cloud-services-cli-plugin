@@ -64,7 +64,7 @@ var _ = Describe("Encrypt", func() {
 
 	JustBeforeEach(func() {
 		fakeAuthClient.DoAuthenticatedPostReturns(postResponse, postStatusCode, postErr)
-		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, plainText, fakeAuthClient, fakeResolver)
+		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, plainText, "", fakeAuthClient, fakeResolver)
 	})
 
 	It("should create an access token", func() {

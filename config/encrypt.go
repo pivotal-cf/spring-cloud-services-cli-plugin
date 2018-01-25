@@ -10,15 +10,24 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
-	return EncryptWithResolver(cliConnection, configServerInstanceName, plainText, authenticatedClient, serviceutil.ServiceInstanceURL)
+func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, fileToEncrypt string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
+	return EncryptWithResolver(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authenticatedClient, serviceutil.ServiceInstanceURL)
 }
 
-func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, authenticatedClient httpclient.AuthenticatedClient,
+func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, fileToEncrypt string, authenticatedClient httpclient.AuthenticatedClient,
 	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
+	}
+
+	var textToEncrypt string = plainText
+	if fileToEncrypt != "" {
+		textToEncrypt, err = readFileContents(fileToEncrypt)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	configServer, err := serviceInstanceURL(cliConnection, configServerInstanceName, accessToken, authenticatedClient)
@@ -26,7 +35,7 @@ func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanc
 		return "", fmt.Errorf("Error obtaining config server URL: %s", err)
 	}
 
-	return encrypt(plainText, configServer, accessToken, authenticatedClient)
+	return encrypt(textToEncrypt, configServer, accessToken, authenticatedClient)
 }
 
 func encrypt(plainText string, serviceURI string, accessToken string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
@@ -42,4 +51,13 @@ func encrypt(plainText string, serviceURI string, accessToken string, authentica
 	}
 
 	return string(body), nil
+}
+
+func readFileContents(fileToEncrypt string) (string, error) {
+	var dat, err = ioutil.ReadFile(fileToEncrypt)
+	if err != nil {
+		return "", fmt.Errorf("Error opening file at path %s : %s", fileToEncrypt, err)
+	}
+	var fileContents string = string(dat)
+	return fileContents, nil
 }
