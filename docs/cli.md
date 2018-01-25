@@ -12,13 +12,15 @@ NAME:
    config-server-encrypt-value - Encrypt a string using a Spring Cloud Services configuration server
 
 USAGE:
-      cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT
+      cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
 
-Note: if VALUE_TO_ENCRYPT contains characters that are special to the shell, it may be necessary
-to use escape characters or quotes. Refer to the shell's man page for details.
+      NOTE: VALUE_TO_ENCRYPT is optional if --file-to-encrypt flag is provided.
 
 ALIAS:
    csev
+
+OPTIONS:
+   --f/--file-to-encrypt      A text file whose contents are to be encrypted. VALUE_TO_ENCRYPT will be ignored if this flag is specified.
 ```
 
 
@@ -155,5 +157,3 @@ ALIAS:
 OPTIONS:
    --i/--cf-instance-index      Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command.
 ```
-
-
