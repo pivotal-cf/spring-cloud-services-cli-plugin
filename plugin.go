@@ -78,6 +78,11 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	case "config-server-encrypt-value":
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
 		plainText := getPlainText(argsConsumer)
+
+		if plainText == "" && fileToEncrypt == "" {
+			diagnoseWithHelp(fmt.Sprintf("You must specify either VALUE_TO_ENCRYPT or --file-to-encrypt"), "config-server-encrypt-value")
+		}
+
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authClient)
 		})
