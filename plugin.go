@@ -79,8 +79,8 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
 		plainText := getPlainText(argsConsumer)
 
-		if plainText == "" && fileToEncrypt == "" {
-			diagnoseWithHelp(fmt.Sprintf("You must specify either VALUE_TO_ENCRYPT or --file-to-encrypt"), "config-server-encrypt-value")
+		if (plainText == "" && fileToEncrypt == "") || (plainText != "" && fileToEncrypt != "") {
+			diagnoseWithHelp(fmt.Sprintf("You must specify either VALUE_TO_ENCRYPT or --file-to-encrypt, but not both."), "config-server-encrypt-value")
 		}
 
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
@@ -222,7 +222,7 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				UsageDetails: plugin.Usage{
 					Usage: `   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
 
-      NOTE: VALUE_TO_ENCRYPT is optional if --file-to-encrypt flag is provided.`,
+      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
 					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
 				},
 			},

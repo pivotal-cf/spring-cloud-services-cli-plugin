@@ -14,13 +14,13 @@ NAME:
 USAGE:
       cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
 
-      NOTE: VALUE_TO_ENCRYPT is optional if --file-to-encrypt flag is provided.
+      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.
 
 ALIAS:
    csev
 
 OPTIONS:
-   --f/--file-to-encrypt      A text file whose contents are to be encrypted. VALUE_TO_ENCRYPT will be ignored if this flag is specified.
+   --f/--file-to-encrypt      A text file whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter.
 ```
 
 

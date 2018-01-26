@@ -20,7 +20,7 @@ import "fmt"
 import "code.cloudfoundry.org/cli/cf/flags"
 
 const CfInstanceIndexUsage = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
-const FileNameUsage = "A text file whose contents are to be encrypted. VALUE_TO_ENCRYPT will be ignored if this flag is specified."
+const FileNameUsage = "A text file whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter."
 
 func ParseFlags(args []string) (*int, []string, error) {
 	const instanceIndexFlagName = "cf-instance-index"
