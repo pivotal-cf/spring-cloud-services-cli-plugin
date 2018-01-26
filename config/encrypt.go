@@ -22,7 +22,7 @@ func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanc
 		return "", err
 	}
 
-	var textToEncrypt string = plainText
+	textToEncrypt := plainText
 	if fileToEncrypt != "" {
 		textToEncrypt, err = readFileContents(fileToEncrypt)
 		if err != nil {

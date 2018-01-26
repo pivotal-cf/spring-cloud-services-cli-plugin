@@ -17,7 +17,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-var _ = Describe("Encrypt", func() {
+var _ = Describe("Encrypt file", func() {
 
 	const (
 		serviceRegistryInstance = "some-service-registry"
@@ -78,7 +78,7 @@ var _ = Describe("Encrypt", func() {
 		Expect(token).To(Equal(accessToken))
 	})
 
-	It("should fail when given a non-existen", func() {
+	It("should fail when given a non-existent file", func() {
 		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient, fakeResolver)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))

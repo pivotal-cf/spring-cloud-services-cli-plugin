@@ -45,14 +45,13 @@ func ParseFlags(args []string) (*int, []string, error) {
 func ParseStringFlags(args []string) (string, []string, error) {
 	const fileFlagName = "file-to-encrypt"
 	fc := flags.New()
-	//New flag methods take arguments: name, short_name and usage of the string flag
 	fc.NewStringFlag(fileFlagName, "f", FileNameUsage)
 	err := fc.Parse(args...)
 
 	if err != nil {
 		return "", nil, fmt.Errorf("Error parsing arguments: %s", err)
 	}
-	//Use a pointer instead of value because 0 initialized int is a valid instance index
+
 	var fileToEncrypt string
 	if fc.IsSet(fileFlagName) {
 		var fileName string
