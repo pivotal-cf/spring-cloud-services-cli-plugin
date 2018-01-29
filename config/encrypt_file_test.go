@@ -3,6 +3,7 @@ package config_test
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/test_support"
 )
 
 var _ = Describe("Encrypt file", func() {
@@ -22,7 +24,6 @@ var _ = Describe("Encrypt file", func() {
 	const (
 		serviceRegistryInstance = "some-service-registry"
 		plainText               = "plain-text"
-		fileToEncrypt           = "file-to-encrypt.txt"
 		errorText               = "to err is human"
 		accessToken             = "access-token"
 		bearerAccessToken       = "bearer " + accessToken
@@ -69,7 +70,23 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should call the config server's /encrypt endpoint with content from a file", func() {
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", fileToEncrypt, fakeAuthClient)
+		testDir := test_support.CreateTempDir()
+		testFile := test_support.CreateFile(testDir, "file-to-encrypt.txt")
+		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testFile, fakeAuthClient)
+
+		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
+		url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPostArgsForCall(0)
+		Expect(url).To(Equal(encryptURI))
+		Expect(bodyType).To(Equal("text/plain"))
+		Expect(body).To(Equal("Hello\nWorld\n"))
+		Expect(token).To(Equal(accessToken))
+	})
+
+	It("should call the config server's /encrypt endpoint with content from a relative path", func() {
+		testDir := test_support.CreateTempDir()
+		testFile := test_support.CreateFile(testDir, "file-to-encrypt.txt")
+		relPath := test_support.GetRelativePath(testFile)
+		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", relPath, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
 		url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPostArgsForCall(0)
@@ -83,6 +100,49 @@ var _ = Describe("Encrypt file", func() {
 		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
+		Expect(err.Error()).To(Equal("Error opening file at path bogus.txt : open bogus.txt: no such file or directory"))
+	})
+
+	It("should fail when given a directory", func() {
+		testDir := test_support.CreateTempDir()
+		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testDir, fakeAuthClient)
+
+		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
+		expectedErr := fmt.Sprintf("Error opening file at path %s : read %s: is a directory", testDir, testDir)
+		Expect(err.Error()).To(Equal(expectedErr))
 	})
 
 })
+
+// func check(err error) {
+// 	if err != nil {
+// 		panic(err)
+// 	}
+// }
+//
+// func GetRelativePath(path string) string {
+// 	cwd, err := os.Getwd()
+// 	relPath, err := filepath.Rel(cwd, path)
+// 	check(err)
+// 	return relPath
+// }
+//
+// func CreateFile(path string, fileName string) string {
+// 	return CreateFileWithMode(path, fileName, os.FileMode(0666))
+// }
+//
+// func CreateFileWithMode(path string, fileName string, mode os.FileMode) string {
+// 	fp := filepath.Join(path, fileName)
+// 	f, err := os.OpenFile(fp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
+// 	check(err)
+// 	defer f.Close()
+// 	_, err = f.WriteString("Hello\nWorld\n")
+// 	check(err)
+// 	return fp
+// }
+//
+// func CreateTempDir() string {
+// 	tempDir, err := ioutil.TempDir("/tmp", "scs-cli-")
+// 	check(err)
+// 	return tempDir
+// }
