@@ -60,6 +60,7 @@ var _ = Describe("Encrypt file", func() {
 			resolverAccessToken = accessToken
 			return serviceURI, fakeResolverError
 		}
+		config.DefaultResolver = fakeResolver
 		fakeResolverError = nil
 	})
 
@@ -68,7 +69,7 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should call the config server's /encrypt endpoint with content from a file", func() {
-		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, "", fileToEncrypt, fakeAuthClient, fakeResolver)
+		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", fileToEncrypt, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
 		url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPostArgsForCall(0)
@@ -79,7 +80,7 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should fail when given a non-existent file", func() {
-		output, err = config.EncryptWithResolver(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient, fakeResolver)
+		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
 	})
