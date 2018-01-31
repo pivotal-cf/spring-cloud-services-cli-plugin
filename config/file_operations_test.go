@@ -1,4 +1,4 @@
-package test_support
+package config
 
 import (
 	"io/ioutil"

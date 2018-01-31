@@ -61,6 +61,5 @@ func readFileContents(fileToEncrypt string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("Error opening file at path %s : %s", fileToEncrypt, err)
 	}
-	var fileContents string = string(dat)
-	return fileContents, nil
+	return string(dat), nil
 }

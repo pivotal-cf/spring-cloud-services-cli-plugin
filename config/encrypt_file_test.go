@@ -16,7 +16,6 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/test_support"
 )
 
 var _ = Describe("Encrypt file", func() {
@@ -70,8 +69,8 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should call the config server's /encrypt endpoint with content from a file", func() {
-		testDir := test_support.CreateTempDir()
-		testFile := test_support.CreateFile(testDir, "file-to-encrypt.txt")
+		testDir := config.CreateTempDir()
+		testFile := config.CreateFile(testDir, "file-to-encrypt.txt")
 		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testFile, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
@@ -83,9 +82,9 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should call the config server's /encrypt endpoint with content from a relative path", func() {
-		testDir := test_support.CreateTempDir()
-		testFile := test_support.CreateFile(testDir, "file-to-encrypt.txt")
-		relPath := test_support.GetRelativePath(testFile)
+		testDir := config.CreateTempDir()
+		testFile := config.CreateFile(testDir, "file-to-encrypt.txt")
+		relPath := config.GetRelativePath(testFile)
 		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", relPath, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
@@ -104,7 +103,7 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should fail when given a directory", func() {
-		testDir := test_support.CreateTempDir()
+		testDir := config.CreateTempDir()
 		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testDir, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
@@ -113,36 +112,3 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 })
-
-// func check(err error) {
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// }
-//
-// func GetRelativePath(path string) string {
-// 	cwd, err := os.Getwd()
-// 	relPath, err := filepath.Rel(cwd, path)
-// 	check(err)
-// 	return relPath
-// }
-//
-// func CreateFile(path string, fileName string) string {
-// 	return CreateFileWithMode(path, fileName, os.FileMode(0666))
-// }
-//
-// func CreateFileWithMode(path string, fileName string, mode os.FileMode) string {
-// 	fp := filepath.Join(path, fileName)
-// 	f, err := os.OpenFile(fp, os.O_CREATE|os.O_EXCL|os.O_WRONLY, mode)
-// 	check(err)
-// 	defer f.Close()
-// 	_, err = f.WriteString("Hello\nWorld\n")
-// 	check(err)
-// 	return fp
-// }
-//
-// func CreateTempDir() string {
-// 	tempDir, err := ioutil.TempDir("/tmp", "scs-cli-")
-// 	check(err)
-// 	return tempDir
-// }
