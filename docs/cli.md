@@ -20,7 +20,7 @@ ALIAS:
    csev
 
 OPTIONS:
-   --f/--file-to-encrypt      A text file whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter.
+   --f/--file-to-encrypt      A text file (with UTF-8 encoding) whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter.
 ```
 
 
