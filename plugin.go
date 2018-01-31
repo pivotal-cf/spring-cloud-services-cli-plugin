@@ -80,7 +80,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		plainText := getPlainText(argsConsumer)
 
 		if (plainText == "" && fileToEncrypt == "") || (plainText != "" && fileToEncrypt != "") {
-			diagnoseWithHelp(fmt.Sprintf("You must specify either VALUE_TO_ENCRYPT or --file-to-encrypt, but not both."), "config-server-encrypt-value")
+			diagnoseWithHelp(fmt.Sprintf("Provide either VALUE_TO_ENCRYPT or the --file-to-encrypt flag, but not both."), "config-server-encrypt-value")
 		}
 
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
