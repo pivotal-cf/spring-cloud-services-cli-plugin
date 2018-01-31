@@ -17,7 +17,7 @@ func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string
 	var err error
 
 	if fileToEncrypt != "" {
-		textToEncrypt, err = readFileContents(fileToEncrypt)
+		textToEncrypt, err = ReadFileContents(fileToEncrypt)
 		if err != nil {
 			return "", err
 		}
@@ -54,12 +54,4 @@ func encrypt(plainText string, serviceURI string, accessToken string, authentica
 	}
 
 	return string(body), nil
-}
-
-func readFileContents(fileToEncrypt string) (string, error) {
-	var dat, err = ioutil.ReadFile(fileToEncrypt)
-	if err != nil {
-		return "", fmt.Errorf("Error opening file at path %s : %s", fileToEncrypt, err)
-	}
-	return string(dat), nil
 }

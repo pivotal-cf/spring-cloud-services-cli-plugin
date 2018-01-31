@@ -1,10 +1,53 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("Encrypt file", func() {
+
+	var (
+		testFile string
+		testDir  string
+	)
+
+	JustBeforeEach(func() {
+		testDir = CreateTempDir()
+		testFile = CreateFile(testDir, "file-to-encrypt.txt")
+	})
+
+	It("should read file with absolute path", func() {
+		contents, err := ReadFileContents(testFile)
+		Expect(contents).To(Equal("Hello\nWorld\n"))
+		Expect(err).To(BeNil())
+	})
+
+	It("should read file with relative path", func() {
+		relPath := GetRelativePath(testFile)
+		contents, err := ReadFileContents(relPath)
+		Expect(contents).To(Equal("Hello\nWorld\n"))
+		Expect(err).To(BeNil())
+	})
+
+	It("should fail for non-existent file", func() {
+		contents, err := ReadFileContents("bogus.txt")
+		Expect(contents).To(Equal(""))
+		Expect(err).To(Equal(fmt.Errorf("Error opening file at path bogus.txt : open bogus.txt: no such file or directory")))
+	})
+
+	It("should fail for directory", func() {
+		contents, err := ReadFileContents(testDir)
+		Expect(contents).To(Equal(""))
+		Expect(err).To(Equal(fmt.Errorf("Error opening file at path %s : read %s: is a directory", testDir, testDir)))
+	})
+
+})
 
 func check(err error) {
 	if err != nil {
