@@ -10,12 +10,24 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
-	return EncryptWithResolver(cliConnection, configServerInstanceName, plainText, authenticatedClient, serviceutil.ServiceInstanceURL)
+var DefaultResolver = serviceutil.ServiceInstanceURL
+
+func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, fileToEncrypt string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
+	textToEncrypt := plainText
+	var err error
+
+	if fileToEncrypt != "" {
+		textToEncrypt, err = ReadFileContents(fileToEncrypt)
+		if err != nil {
+			return "", err
+		}
+	}
+	return EncryptWithResolver(cliConnection, configServerInstanceName, textToEncrypt, authenticatedClient, DefaultResolver)
 }
 
 func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, authenticatedClient httpclient.AuthenticatedClient,
 	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err

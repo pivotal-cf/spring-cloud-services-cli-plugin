@@ -34,6 +34,14 @@ func (ac *ArgConsumer) Consume(arg int, argDescription string) string {
 	return ac.positionalArgs[arg]
 }
 
+func (ac *ArgConsumer) ConsumeOptional(arg int, argDescription string) string {
+	if len(ac.positionalArgs) < arg+1 || ac.positionalArgs[arg] == "" {
+		return ""
+	}
+	ac.consumed[arg] = struct{}{}
+	return ac.positionalArgs[arg]
+}
+
 func (ac *ArgConsumer) CheckAllConsumed() {
 	if len(ac.consumed) < len(ac.positionalArgs) {
 		extra := []string{}

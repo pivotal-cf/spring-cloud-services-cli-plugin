@@ -59,6 +59,7 @@ var _ = Describe("Encrypt", func() {
 			resolverAccessToken = accessToken
 			return serviceURI, fakeResolverError
 		}
+		config.DefaultResolver = fakeResolver
 		fakeResolverError = nil
 	})
 

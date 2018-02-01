@@ -43,11 +43,12 @@ type Plugin struct{}
 
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	var cfInstanceIndex *int = nil
+	var fileToEncrypt string
 	var positionalArgs []string
 	var err error
 	if args[0] == "config-server-encrypt-value" {
 		// Enable encryption of a value starting with "-".
-		positionalArgs, err = cli.ParseNoFlags(args)
+		fileToEncrypt, positionalArgs, err = cli.ParseStringFlags(args)
 	} else {
 		cfInstanceIndex, positionalArgs, err = cli.ParseFlags(args)
 	}
@@ -77,8 +78,13 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	case "config-server-encrypt-value":
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
 		plainText := getPlainText(argsConsumer)
+
+		if (plainText == "" && fileToEncrypt == "") || (plainText != "" && fileToEncrypt != "") {
+			diagnoseWithHelp(fmt.Sprintf("Provide either VALUE_TO_ENCRYPT or the --file-to-encrypt flag, but not both."), "config-server-encrypt-value")
+		}
+
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
-			return config.Encrypt(cliConnection, configServerInstanceName, plainText, authClient)
+			return config.Encrypt(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authClient)
 		})
 
 	case "spring-cloud-service-stop":
@@ -162,7 +168,7 @@ func getServiceInstanceName(ac *cli.ArgConsumer) string {
 }
 
 func getPlainText(ac *cli.ArgConsumer) string {
-	return ac.Consume(2, "string to encrypt")
+	return ac.ConsumeOptional(2, "string to encrypt")
 }
 
 func getServiceRegistryInstanceName(ac *cli.ArgConsumer) string {
@@ -214,10 +220,10 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				HelpText: "Encrypt a string using a Spring Cloud Services configuration server",
 				Alias:    "csev",
 				UsageDetails: plugin.Usage{
-					Usage: `   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME VALUE_TO_ENCRYPT
+					Usage: `   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
 
-Note: if VALUE_TO_ENCRYPT contains characters that are special to the shell, it may be necessary
-to use escape characters or quotes. Refer to the shell's man page for details.`,
+      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
+					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
 				},
 			},
 			{
