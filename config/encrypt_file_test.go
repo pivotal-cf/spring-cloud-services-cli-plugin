@@ -3,7 +3,6 @@ package config_test
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -81,34 +80,11 @@ var _ = Describe("Encrypt file", func() {
 		Expect(token).To(Equal(accessToken))
 	})
 
-	It("should call the config server's /encrypt endpoint with content from a relative path", func() {
-		testDir := config.CreateTempDir()
-		testFile := config.CreateFile(testDir, "file-to-encrypt.txt")
-		relPath := config.GetRelativePath(testFile)
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", relPath, fakeAuthClient)
-
-		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
-		url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPostArgsForCall(0)
-		Expect(url).To(Equal(encryptURI))
-		Expect(bodyType).To(Equal("text/plain"))
-		Expect(body).To(Equal("Hello\nWorld\n"))
-		Expect(token).To(Equal(accessToken))
-	})
-
 	It("should fail when given a non-existent file", func() {
 		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
 		Expect(err.Error()).To(Equal("Error opening file at path bogus.txt : open bogus.txt: no such file or directory"))
-	})
-
-	It("should fail when given a directory", func() {
-		testDir := config.CreateTempDir()
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testDir, fakeAuthClient)
-
-		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
-		expectedErr := fmt.Sprintf("Error opening file at path %s : read %s: is a directory", testDir, testDir)
-		Expect(err.Error()).To(Equal(expectedErr))
 	})
 
 })
