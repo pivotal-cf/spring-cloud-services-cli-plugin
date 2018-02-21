@@ -81,6 +81,18 @@
 			"revisionTime": "2015-10-23T02:49:00Z"
 		},
 		{
+			"checksumSHA1": "n2GfUqIcxaitm/r40fwBNt1EBP0=",
+			"path": "github.com/mattn/go-colorable",
+			"revision": "7dc3415be66d7cc68bf0182f35c8d31f8d2ad8a7",
+			"revisionTime": "2018-02-05T07:01:58Z"
+		},
+		{
+			"checksumSHA1": "qmf2OPIdr1nS6FGwGndELHFXHFU=",
+			"path": "github.com/mattn/go-isatty",
+			"revision": "6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c",
+			"revisionTime": "2017-11-07T05:05:31Z"
+		},
+		{
 			"checksumSHA1": "5CYrIFTTUD3pONFo8uEO21Ajz68=",
 			"path": "github.com/onsi/ginkgo",
 			"revision": "00054c0bb96fc880d4e0be1b90937fad438c5290",
