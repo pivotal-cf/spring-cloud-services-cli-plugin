@@ -80,6 +80,20 @@ ALIAS:
 ```
 
 
+## `cf spring-cloud-service-view`
+
+```
+NAME:
+   spring-cloud-service-view - Display health and status for a Spring Cloud Services service instance
+
+USAGE:
+      cf scs-view SERVICE_INSTANCE_NAME
+
+ALIAS:
+   scs-view
+```
+
+
 ## `cf service-registry-info`
 
 ```
