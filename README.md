@@ -33,6 +33,11 @@ $ cf install-plugin -f $GOPATH/bin/spring-cloud-services-cli-plugin
 
 ```
 
+You can also install the plugin from the [Cloud Foundry cf-cli plugins repository](https://plugins.cloudfoundry.org):
+```bash
+$ cf install-plugin -r CF-Community "spring-cloud-services"
+```
+
 The plugin's commands may then be listed by issuing `cf help`.
 
 To update the plugin, uninstall it as follows and then re-install the plugin as above:
