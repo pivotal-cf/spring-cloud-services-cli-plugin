@@ -15,6 +15,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
+	"strings"
 )
 
 var _ = Describe("Encrypt", func() {
@@ -118,6 +119,17 @@ var _ = Describe("Encrypt", func() {
 
 		It("should propagate the error", func() {
 			Expect(err.Error()).To(ContainSubstring(errorText))
+		})
+	})
+
+	Context("when the config server's /encrypt endpoint fails but returns a body containing error details", func() {
+		var errorBody = ioutil.NopCloser(strings.NewReader("{error details}"))
+		BeforeEach(func() {
+			postResponse, postStatusCode, postErr = errorBody, 0, testError
+		})
+
+		It("should propagate an error containing error body content", func() {
+			Expect(err.Error()).To(ContainSubstring("{error details}"))
 		})
 	})
 
