@@ -93,7 +93,7 @@ func (c *authenticatedClient) DoAuthenticatedPost(url string, bodyType string, b
 		return nil, 0, fmt.Errorf("Authenticated post to '%s' failed: %s", url, err)
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, resp.StatusCode, fmt.Errorf("Authenticated post to '%s' failed: %s", url, resp.Status)
+		return resp.Body, resp.StatusCode, fmt.Errorf("Authenticated post to '%s' failed: %s", url, resp.Status)
 	}
 
 	return resp.Body, resp.StatusCode, nil

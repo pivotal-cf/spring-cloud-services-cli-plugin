@@ -268,8 +268,24 @@ var _ = Describe("Authclient", func() {
 				fakeClient.DoReturns(resp, nil)
 			})
 
-			It("should return the error", func() {
+			It("should return the error with no body content", func() {
 				Expect(err).To(MatchError("Authenticated post to 'https://eureka.pivotal.io/auth/request' failed: 404 Not found"))
+				Expect(respBody).To(BeNil())
+			})
+
+			Context("when the bad status response contains a body", func() {
+				var detailsBody  = ioutil.NopCloser(strings.NewReader("{details}"))
+
+				BeforeEach(func() {
+					resp := &http.Response{StatusCode: http.StatusNotFound, Status: "404 Not found"}
+					resp.Body = detailsBody
+					fakeClient.DoReturns(resp, nil)
+				})
+
+				It("should return the error with the body", func() {
+					Expect(err).To(MatchError("Authenticated post to 'https://eureka.pivotal.io/auth/request' failed: 404 Not found"))
+					Expect(respBody).To(Equal(detailsBody))
+				})
 			})
 		})
 	})

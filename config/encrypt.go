@@ -42,15 +42,23 @@ func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanc
 }
 
 func encrypt(plainText string, serviceURI string, accessToken string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
+	var bodyHoldsErrorDetails = false
 	bodyReader, _, err := authenticatedClient.DoAuthenticatedPost(serviceURI+"encrypt", "text/plain", plainText, accessToken) // No pun intended between "text/plain" and plainText
 	if err != nil {
-		return "", err
+		if bodyReader == nil {
+			return "", err
+		}
+		bodyHoldsErrorDetails = true
 	}
 
 	defer bodyReader.Close()
 	body, err := ioutil.ReadAll(bodyReader)
 	if err != nil {
 		return "", fmt.Errorf("Failed to read encrypted value: %s", err)
+	}
+
+	if bodyHoldsErrorDetails {
+		return "", fmt.Errorf("Encryption failed: %v", string(body))
 	}
 
 	return string(body), nil
