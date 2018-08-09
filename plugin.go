@@ -117,6 +117,12 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.View)
 		})
 
+	case "spring-cloud-service-configuration":
+		configServerInstanceName := getServiceInstanceName(argsConsumer)
+		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
+			return instance.RunOperation(cliConnection, authClient, configServerInstanceName, instance.Parameters)
+		})
+
 	case "service-registry-enable":
 		serviceRegistryInstanceName := getServiceRegistryInstanceName(argsConsumer)
 		cfApplicationName := getCfApplicationName(argsConsumer)
@@ -264,6 +270,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "scs-view",
 				UsageDetails: plugin.Usage{
 					Usage: "   cf scs-view SERVICE_INSTANCE_NAME",
+				},
+			},
+			{
+				Name:     "spring-cloud-service-configuration",
+				HelpText: "Display configuration parameters for a Spring Cloud Services service instance",
+				Alias:    "scs-config",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf scs-config SERVICE_INSTANCE_NAME",
 				},
 			},
 			{
