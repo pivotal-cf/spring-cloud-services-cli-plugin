@@ -87,6 +87,13 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authClient)
 		})
 
+	case "config-server-delete-git":
+		gitRepoURI := getGitRepoURI(argsConsumer)
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Deleting Git repository %s from config server service instance %s", format.Bold(format.Cyan(gitRepoURI)), format.Bold(format.Cyan(configServerInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return config.DeleteGitRepo(cliConnection, authClient, configServerInstanceName, gitRepoURI)
+		})
+
 	case "spring-cloud-service-stop":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
@@ -118,9 +125,9 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		})
 
 	case "spring-cloud-service-configuration":
-		configServerInstanceName := getServiceInstanceName(argsConsumer)
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
-			return instance.RunOperation(cliConnection, authClient, configServerInstanceName, instance.Parameters)
+			return instance.RunOperation(cliConnection, authClient, serviceInstanceName, instance.Parameters)
 		})
 
 	case "service-registry-enable":
@@ -159,6 +166,9 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	default:
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
 	}
+}
+func getGitRepoURI(ac *cli.ArgConsumer) string {
+	return ac.Consume(2, "git repository URI")
 }
 
 func getCfApplicationName(ac *cli.ArgConsumer) string {
@@ -230,6 +240,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 
       NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
 					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
+				},
+			},
+			{
+				Name:     "config-server-delete-git",
+				HelpText: "Delete a Git repository from a Spring Cloud Services configuration server service instance",
+				Alias:    "csdg",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf config-server-delete-git CONFIG_SERVER_INSTANCE_NAME GIT_REPO_URI",
 				},
 			},
 			{

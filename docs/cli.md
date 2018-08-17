@@ -24,6 +24,20 @@ OPTIONS:
 ```
 
 
+## `cf config-server-delete-git`
+
+```
+NAME:
+   config-server-delete-git - Delete a Git repository from a Spring Cloud Services configuration server
+
+USAGE:
+      cf config-server-delete-git CONFIG_SERVER_INSTANCE_NAME GIT_REPO_URI
+
+ALIAS:
+   csdg
+```
+
+
 ## `cf spring-cloud-service-stop`
 
 ```
