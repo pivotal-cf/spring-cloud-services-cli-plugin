@@ -29,6 +29,8 @@ type AuthenticatedClient interface {
 
 	DoAuthenticatedDelete(url string, accessToken string) (int, error)
 
+	DoAuthenticatedPatch(url string, bodyType string, body string, accessToken string) (int, error)
+
 	DoAuthenticatedPost(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error)
 
 	DoAuthenticatedPut(url string, accessToken string) (int, error)
@@ -76,6 +78,24 @@ func (c *authenticatedClient) DoAuthenticatedDelete(url string, accessToken stri
 	}
 	if resp.StatusCode != http.StatusOK {
 		return resp.StatusCode, fmt.Errorf("Authenticated delete of '%s' failed: %s", url, resp.Status)
+	}
+	return resp.StatusCode, nil
+}
+
+func (c *authenticatedClient) DoAuthenticatedPatch(url string, bodyType string, bodyStr string, accessToken string) (int, error) {
+	body := strings.NewReader(bodyStr)
+	req, err := http.NewRequest("PATCH", url, body)
+	if err != nil {
+		return 0, fmt.Errorf("Request creation error: %s", err)
+	}
+	addAuthorizationHeader(req, accessToken)
+	req.Header.Set("Content-Type", bodyType)
+	resp, err := c.Httpclient.Do(req)
+	if err != nil {
+		return 0, fmt.Errorf("Authenticated patch of '%s' failed: %s", url, err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return resp.StatusCode, fmt.Errorf("Authenticated patch of '%s' failed: %s", url, resp.Status)
 	}
 	return resp.StatusCode, nil
 }

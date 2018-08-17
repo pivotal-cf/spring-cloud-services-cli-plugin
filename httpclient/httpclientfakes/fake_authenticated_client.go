@@ -39,6 +39,22 @@ type FakeAuthenticatedClient struct {
 		result1 int
 		result2 error
 	}
+	DoAuthenticatedPatchStub        func(url string, bodyType string, body string, accessToken string) (int, error)
+	doAuthenticatedPatchMutex       sync.RWMutex
+	doAuthenticatedPatchArgsForCall []struct {
+		url         string
+		bodyType    string
+		body        string
+		accessToken string
+	}
+	doAuthenticatedPatchReturns struct {
+		result1 int
+		result2 error
+	}
+	doAuthenticatedPatchReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
 	DoAuthenticatedPostStub        func(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error)
 	doAuthenticatedPostMutex       sync.RWMutex
 	doAuthenticatedPostArgsForCall []struct {
@@ -182,6 +198,60 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedDeleteReturnsOnCall(i int, r
 	}{result1, result2}
 }
 
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPatch(url string, bodyType string, body string, accessToken string) (int, error) {
+	fake.doAuthenticatedPatchMutex.Lock()
+	ret, specificReturn := fake.doAuthenticatedPatchReturnsOnCall[len(fake.doAuthenticatedPatchArgsForCall)]
+	fake.doAuthenticatedPatchArgsForCall = append(fake.doAuthenticatedPatchArgsForCall, struct {
+		url         string
+		bodyType    string
+		body        string
+		accessToken string
+	}{url, bodyType, body, accessToken})
+	fake.recordInvocation("DoAuthenticatedPatch", []interface{}{url, bodyType, body, accessToken})
+	fake.doAuthenticatedPatchMutex.Unlock()
+	if fake.DoAuthenticatedPatchStub != nil {
+		return fake.DoAuthenticatedPatchStub(url, bodyType, body, accessToken)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.doAuthenticatedPatchReturns.result1, fake.doAuthenticatedPatchReturns.result2
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPatchCallCount() int {
+	fake.doAuthenticatedPatchMutex.RLock()
+	defer fake.doAuthenticatedPatchMutex.RUnlock()
+	return len(fake.doAuthenticatedPatchArgsForCall)
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPatchArgsForCall(i int) (string, string, string, string) {
+	fake.doAuthenticatedPatchMutex.RLock()
+	defer fake.doAuthenticatedPatchMutex.RUnlock()
+	return fake.doAuthenticatedPatchArgsForCall[i].url, fake.doAuthenticatedPatchArgsForCall[i].bodyType, fake.doAuthenticatedPatchArgsForCall[i].body, fake.doAuthenticatedPatchArgsForCall[i].accessToken
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPatchReturns(result1 int, result2 error) {
+	fake.DoAuthenticatedPatchStub = nil
+	fake.doAuthenticatedPatchReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPatchReturnsOnCall(i int, result1 int, result2 error) {
+	fake.DoAuthenticatedPatchStub = nil
+	if fake.doAuthenticatedPatchReturnsOnCall == nil {
+		fake.doAuthenticatedPatchReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.doAuthenticatedPatchReturnsOnCall[i] = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeAuthenticatedClient) DoAuthenticatedPost(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error) {
 	fake.doAuthenticatedPostMutex.Lock()
 	ret, specificReturn := fake.doAuthenticatedPostReturnsOnCall[len(fake.doAuthenticatedPostArgsForCall)]
@@ -298,6 +368,8 @@ func (fake *FakeAuthenticatedClient) Invocations() map[string][][]interface{} {
 	defer fake.doAuthenticatedGetMutex.RUnlock()
 	fake.doAuthenticatedDeleteMutex.RLock()
 	defer fake.doAuthenticatedDeleteMutex.RUnlock()
+	fake.doAuthenticatedPatchMutex.RLock()
+	defer fake.doAuthenticatedPatchMutex.RUnlock()
 	fake.doAuthenticatedPostMutex.RLock()
 	defer fake.doAuthenticatedPostMutex.RUnlock()
 	fake.doAuthenticatedPutMutex.RLock()
