@@ -87,9 +87,16 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return config.Encrypt(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authClient)
 		})
 
-	case "config-server-delete-git":
-		gitRepoURI := getGitRepoURI(argsConsumer)
+	case "config-server-add-git":
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		gitRepoURI := getGitRepoURI(argsConsumer)
+		runAction(argsConsumer, cliConnection, fmt.Sprintf("Adding Git repository to config server service instance %s", format.Bold(format.Cyan(configServerInstanceName))), func(progressWriter io.Writer) (string, error) {
+			return config.AddGitRepo(cliConnection, authClient, configServerInstanceName, gitRepoURI)
+		})
+
+	case "config-server-delete-git":
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		gitRepoURI := getGitRepoURI(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Deleting Git repository %s from config server service instance %s", format.Bold(format.Cyan(gitRepoURI)), format.Bold(format.Cyan(configServerInstanceName))), func(progressWriter io.Writer) (string, error) {
 			return config.DeleteGitRepo(cliConnection, authClient, configServerInstanceName, gitRepoURI)
 		})
@@ -167,6 +174,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		os.Exit(0) // Ignore CLI-MESSAGE-UNINSTALL etc.
 	}
 }
+
 func getGitRepoURI(ac *cli.ArgConsumer) string {
 	return ac.Consume(2, "git repository URI")
 }
@@ -240,6 +248,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 
       NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
 					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
+				},
+			},
+			{
+				Name:     "config-server-add-git",
+				HelpText: "Add a Git repository to a Spring Cloud Services configuration server service instance",
+				Alias:    "csag",
+				UsageDetails: plugin.Usage{
+					Usage: "   cf config-server-add-git CONFIG_SERVER_INSTANCE_NAME GIT_REPO_URI",
 				},
 			},
 			{
