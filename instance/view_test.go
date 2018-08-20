@@ -47,7 +47,7 @@ var _ = Describe("View", func() {
 		Expect(accessToken).To(Equal(testAccessToken))
 	})
 
-	Context("when GET return an error", func() {
+	Context("when GET returns an error", func() {
 		var testError error
 
 		BeforeEach(func() {
