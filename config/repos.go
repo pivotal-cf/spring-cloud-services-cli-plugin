@@ -2,14 +2,37 @@ package config
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
+	"encoding/json"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"net/http"
 	"net/url"
 	"strings"
-	"encoding/json"
-	"net/http"
 )
+
+func AddGitRepo(cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, configServerInstanceName string, gitRepoURI string) (string, error) {
+	accessToken, err := cfutil.GetToken(cliConnection)
+	if err != nil {
+		return "", err
+	}
+
+	patchUrl, err := getCliUrlForConfigServerServiceInstance(cliConnection, configServerInstanceName)
+	if err != nil {
+		return "", err
+	}
+
+	bodyMap, _ := json.Marshal(map[string]string{"operation": "add", "repo": gitRepoURI})
+	statusCode, err := authenticatedClient.DoAuthenticatedPatch(patchUrl, "application/json", string(bodyMap), accessToken)
+	if err != nil {
+		return "", fmt.Errorf("Unable to add git repo %s to config server service instance %s: %s", gitRepoURI, configServerInstanceName, err)
+	}
+	if statusCode != http.StatusOK {
+		return "", fmt.Errorf("Unable to add git repo %s to config server service instance %s: %d", gitRepoURI, configServerInstanceName, statusCode)
+	}
+
+	return "", nil
+}
 
 func DeleteGitRepo(cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, configServerInstanceName string, gitRepoURI string) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
