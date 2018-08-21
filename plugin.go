@@ -43,15 +43,9 @@ type Plugin struct{}
 
 func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	var cfInstanceIndex *int = nil
-	var fileToEncrypt string
 	var positionalArgs []string
 	var err error
-	if args[0] == "config-server-encrypt-value" {
-		// Enable encryption of a value starting with "-".
-		fileToEncrypt, positionalArgs, err = cli.ParseStringFlags(args)
-	} else {
-		cfInstanceIndex, positionalArgs, err = cli.ParseFlags(args)
-	}
+	cfInstanceIndex, positionalArgs, err = cli.ParseFlags(args)
 	if err != nil {
 		format.Diagnose(string(err.Error()), os.Stderr, func() {
 			os.Exit(1)
@@ -74,18 +68,6 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	argsConsumer := cli.NewArgConsumer(positionalArgs, diagnoseWithHelp)
 
 	switch args[0] {
-
-	case "config-server-encrypt-value":
-		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
-		plainText := getPlainText(argsConsumer)
-
-		if (plainText == "" && fileToEncrypt == "") || (plainText != "" && fileToEncrypt != "") {
-			diagnoseWithHelp(fmt.Sprintf("Provide either VALUE_TO_ENCRYPT or the --file-to-encrypt flag, but not both."), "config-server-encrypt-value")
-		}
-
-		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
-			return config.Encrypt(cliConnection, configServerInstanceName, plainText, fileToEncrypt, authClient)
-		})
 
 	case "config-server-add-git":
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
@@ -191,10 +173,6 @@ func getServiceInstanceName(ac *cli.ArgConsumer) string {
 	return ac.Consume(1, "service instance name")
 }
 
-func getPlainText(ac *cli.ArgConsumer) string {
-	return ac.ConsumeOptional(2, "string to encrypt")
-}
-
 func getServiceRegistryInstanceName(ac *cli.ArgConsumer) string {
 	return ac.Consume(1, "service registry instance name")
 }
@@ -239,17 +217,6 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 			Build: 0,
 		},
 		Commands: []plugin.Command{
-			{
-				Name:     "config-server-encrypt-value",
-				HelpText: "Encrypt a string using a Spring Cloud Services configuration server",
-				Alias:    "csev",
-				UsageDetails: plugin.Usage{
-					Usage: `   cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
-
-      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
-					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
-				},
-			},
 			{
 				Name:     "config-server-add-git",
 				HelpText: "Add a Git repository to a Spring Cloud Services configuration server service instance",

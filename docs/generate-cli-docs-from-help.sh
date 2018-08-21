@@ -5,7 +5,6 @@ if [ ! -z ${DEBUG} ]; then
 fi
 
 declare -a SCS_COMMANDS=(
-    "config-server-encrypt-value"
     "config-server-add-git"
     "config-server-delete-git"
     "spring-cloud-service-configuration"
