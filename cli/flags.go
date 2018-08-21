@@ -20,7 +20,6 @@ import "fmt"
 import "code.cloudfoundry.org/cli/cf/flags"
 
 const CfInstanceIndexUsage = "Operate on a specific instance in the Eureka registry. The instance index number can be found by using the service-registry-list command."
-const FileNameUsage = "A text file (with UTF-8 encoding) whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter."
 
 func ParseFlags(args []string) (*int, []string, error) {
 	const instanceIndexFlagName = "cf-instance-index"
@@ -40,25 +39,6 @@ func ParseFlags(args []string) (*int, []string, error) {
 		cfInstanceIndex = &idx
 	}
 	return cfInstanceIndex, fc.Args(), nil
-}
-
-func ParseStringFlags(args []string) (string, []string, error) {
-	const fileFlagName = "file-to-encrypt"
-	fc := flags.New()
-	fc.NewStringFlag(fileFlagName, "f", FileNameUsage)
-	err := fc.Parse(args...)
-
-	if err != nil {
-		return "", nil, fmt.Errorf("Error parsing arguments: %s", err)
-	}
-
-	var fileToEncrypt string
-	if fc.IsSet(fileFlagName) {
-		var fileName string
-		fileName = fc.String(fileFlagName)
-		fileToEncrypt = fileName
-	}
-	return fileToEncrypt, fc.Args(), nil
 }
 
 func ParseNoFlags(args []string) ([]string, error) {

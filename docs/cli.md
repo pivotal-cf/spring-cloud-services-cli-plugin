@@ -5,25 +5,6 @@ The following commands can be executed using the Spring Cloud Services [Cloud Fo
 # Spring Cloud Services CLI Docs
 
 
-## `cf config-server-encrypt-value`
-
-```
-NAME:
-   config-server-encrypt-value - Encrypt a string using a Spring Cloud Services configuration server
-
-USAGE:
-      cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
-
-      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.
-
-ALIAS:
-   csev
-
-OPTIONS:
-   --f/--file-to-encrypt      A text file (with UTF-8 encoding) whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter.
-```
-
-
 ## `cf config-server-delete-git`
 
 ```
