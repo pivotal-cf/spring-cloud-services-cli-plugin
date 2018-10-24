@@ -24,6 +24,20 @@ OPTIONS:
 ```
 
 
+## `cf spring-cloud-service-configuration`
+
+```
+NAME:
+   spring-cloud-service-configuration - Display configuration parameters for a Spring Cloud Services service instance
+
+USAGE:
+      cf scs-config SERVICE_INSTANCE_NAME
+
+ALIAS:
+   scs-config
+```
+
+
 ## `cf spring-cloud-service-stop`
 
 ```
@@ -91,20 +105,6 @@ USAGE:
 
 ALIAS:
    scs-view
-```
-
-
-## `cf spring-cloud-service-configuration`
-
-```
-NAME:
-   spring-cloud-service-configuration - Display configuration parameters for a Spring Cloud Services service instance
-
-USAGE:
-      cf scs-config SERVICE_INSTANCE_NAME
-
-ALIAS:
-   scs-config
 ```
 
 
