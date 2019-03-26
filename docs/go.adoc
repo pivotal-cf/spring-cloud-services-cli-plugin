@@ -133,7 +133,7 @@ $ govendor test +local
 ----
 
 Tests are written using the link:https://onsi.github.io/ginkgo/[Ginkgo] BDD testing framework
-and the link:http://onsi.github.io/gomega/[Gomega] matcher library, which are included in the `/vendor`
+and the link:https://onsi.github.io/gomega/[Gomega] matcher library, which are included in the `/vendor`
 directory.
 
 To run tests using Ginkgo, install the executable as follows (unless you did that already):
