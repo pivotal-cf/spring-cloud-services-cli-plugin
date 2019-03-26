@@ -32,7 +32,7 @@ var _ = Describe("View", func() {
 
 	BeforeEach(func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		serviceInstanceAdminURL = "http://some.host/x/y/cli/instances/someguid"
+		serviceInstanceAdminURL = "https://some.host/x/y/cli/instances/someguid"
 
 	})
 
@@ -43,7 +43,7 @@ var _ = Describe("View", func() {
 	It("should issue a GET with the correct parameters", func() {
 		Expect(fakeAuthClient.DoAuthenticatedGetCallCount()).To(Equal(1))
 		url, accessToken := fakeAuthClient.DoAuthenticatedGetArgsForCall(0)
-		Expect(url).To(Equal("http://some.host/x/y/cli/instances/someguid"))
+		Expect(url).To(Equal("https://some.host/x/y/cli/instances/someguid"))
 		Expect(accessToken).To(Equal(testAccessToken))
 	})
 
