@@ -30,7 +30,7 @@ func CommandTestBody(command string,
 
 		BeforeEach(func() {
 			fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-			serviceInstanceAdminURL = "http://some.host/x/y/cli/instances/someguid"
+			serviceInstanceAdminURL = "https://some.host/x/y/cli/instances/someguid"
 
 		})
 

@@ -24,7 +24,7 @@ var _ = Describe("Enable", func() {
 
 	BeforeEach(func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		eurekaUrl = "http://some.host/x/y/cli/instances/someguid"
+		eurekaUrl = "https://some.host/x/y/cli/instances/someguid"
 		eurekaAppName = "eureakappname"
 		instanceId = "instanceid"
 
