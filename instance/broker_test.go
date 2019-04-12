@@ -119,38 +119,11 @@ var _ = Describe("RunOperation", func() {
 			})
 		})
 
-		Context("when the dashboard URL is not in the correct format", func() {
-			Context("because it is malformed", func() {
-				BeforeEach(func() {
-					fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-						DashboardUrl: "://",
-					}, nil)
-				})
-
-				It("should return a suitable error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("parse ://: missing protocol scheme"))
-				})
-			})
-
-			Context("because its path format is invalid", func() {
-				BeforeEach(func() {
-					fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-						DashboardUrl: "https://spring-cloud-broker.some.host.name",
-					}, nil)
-				})
-
-				It("should return a suitable error", func() {
-					Expect(err).To(HaveOccurred())
-					Expect(err).To(MatchError("path of https://spring-cloud-broker.some.host.name has no segments"))
-				})
-			})
-		})
-
 		Context("when the dashboard URL is in the correct format", func() {
 			BeforeEach(func() {
 				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
 					DashboardUrl: "https://spring-cloud-broker.some.host.name/x/y/guid",
+					Guid: "guid",
 				}, nil)
 			})
 

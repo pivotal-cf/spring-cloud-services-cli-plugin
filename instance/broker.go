@@ -19,7 +19,6 @@ package instance
 import (
 	"fmt"
 	"net/url"
-	"strings"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
@@ -52,15 +51,8 @@ func accessServiceBroker(serviceInstanceName string, cliConnection plugin.CliCon
 	if err != nil {
 		return "", "", err
 	}
-	path := parsedUrl.Path
 
-	segments := strings.Split(path, "/")
-	if len(segments) == 0 || (len(segments) == 1 && segments[0] == "") {
-		return "", "", fmt.Errorf("path of %s has no segments", serviceModel.DashboardUrl)
-	}
-	guid := segments[len(segments)-1]
-
-	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s", guid)
+	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s",  serviceModel.Guid)
 
 	return parsedUrl.String(), accessToken, nil
 }
