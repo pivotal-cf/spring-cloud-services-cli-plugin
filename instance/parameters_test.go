@@ -28,7 +28,7 @@ var _ = Describe("Parameters", func() {
 
 	BeforeEach(func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		serviceInstanceAdminURL = "http://servicebroker.host/cli/instances/si-guid"
+		serviceInstanceAdminURL = "https://servicebroker.host/cli/instances/si-guid"
 	})
 
 	JustBeforeEach(func() {
@@ -38,7 +38,7 @@ var _ = Describe("Parameters", func() {
 	It("should issue a GET to the service broker parameters endpoint with the correct parameters", func() {
 		Expect(fakeAuthClient.DoAuthenticatedGetCallCount()).To(Equal(1))
 		url, accessToken := fakeAuthClient.DoAuthenticatedGetArgsForCall(0)
-		Expect(url).To(Equal("http://servicebroker.host/cli/instances/si-guid/parameters"))
+		Expect(url).To(Equal("https://servicebroker.host/cli/instances/si-guid/parameters"))
 		Expect(accessToken).To(Equal(testAccessToken))
 	})
 
