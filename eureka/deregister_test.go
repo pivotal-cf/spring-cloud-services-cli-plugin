@@ -38,7 +38,7 @@ var _ = Describe("Deregister", func() {
 	It("should issue a DELETE with the correct parameters", func() {
 		Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).To(Equal(1))
 		url, accessToken := fakeAuthClient.DoAuthenticatedDeleteArgsForCall(0)
-		Expect(url).To(Equal("http://some.host/x/y/cli/instances/someguideureka/apps/eureakappname/instanceid"))
+		Expect(url).To(Equal("https://some.host/x/y/cli/instances/someguideureka/apps/eureakappname/instanceid"))
 		Expect(accessToken).To(Equal(testAccessToken))
 		Expect(err).NotTo(HaveOccurred())
 	})

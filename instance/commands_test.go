@@ -41,7 +41,7 @@ func CommandTestBody(command string,
 		It("should issue a PUT with the correct parameters", func() {
 			Expect(fakeAuthClient.DoAuthenticatedPutCallCount()).To(Equal(1))
 			url, accessToken := fakeAuthClient.DoAuthenticatedPutArgsForCall(0)
-			Expect(url).To(Equal(fmt.Sprintf("http://some.host/x/y/cli/instances/someguid/command?%s", command)))
+			Expect(url).To(Equal(fmt.Sprintf("https://some.host/x/y/cli/instances/someguid/command?%s", command)))
 			Expect(accessToken).To(Equal(testAccessToken))
 			Expect(output).To(Equal(""))
 			Expect(err).NotTo(HaveOccurred())
