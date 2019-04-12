@@ -42,7 +42,6 @@ var _ = Describe("Encrypt", func() {
 		postErr               error
 		output                string
 		err                   error
-		accessTokenURI        string
 		fakeResolverCallCount int
 		fakeResolverError     error
 	)
@@ -52,7 +51,6 @@ var _ = Describe("Encrypt", func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		testError = errors.New(errorText)
 		postResponse, postStatusCode, postErr = ioutil.NopCloser(bytes.NewBufferString(cipherText)), http.StatusOK, nil
-		accessTokenURI = "access-token-uri"
 		fakeCliConnection.AccessTokenReturns(bearerAccessToken, nil)
 		fakeResolverCallCount = 0
 		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
