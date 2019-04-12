@@ -2,7 +2,6 @@ package config_test
 
 import (
 	"bytes"
-	"errors"
 	"io/ioutil"
 	"net/http"
 
@@ -21,8 +20,6 @@ var _ = Describe("Encrypt file", func() {
 
 	const (
 		serviceRegistryInstance = "some-service-registry"
-		plainText               = "plain-text"
-		errorText               = "to err is human"
 		accessToken             = "access-token"
 		bearerAccessToken       = "bearer " + accessToken
 		serviceURI              = "service-uri/"
@@ -34,14 +31,10 @@ var _ = Describe("Encrypt file", func() {
 		fakeCliConnection     *pluginfakes.FakeCliConnection
 		fakeAuthClient        *httpclientfakes.FakeAuthenticatedClient
 		fakeResolver          func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		resolverAccessToken   string
-		testError             error
 		postResponse          io.ReadCloser
 		postStatusCode        int
 		postErr               error
-		output                string
 		err                   error
-		accessTokenURI        string
 		fakeResolverCallCount int
 		fakeResolverError     error
 	)
@@ -49,14 +42,11 @@ var _ = Describe("Encrypt file", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		testError = errors.New(errorText)
 		postResponse, postStatusCode, postErr = ioutil.NopCloser(bytes.NewBufferString(cipherText)), http.StatusOK, nil
-		accessTokenURI = "access-token-uri"
 		fakeCliConnection.AccessTokenReturns(bearerAccessToken, nil)
 		fakeResolverCallCount = 0
 		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
 			fakeResolverCallCount++
-			resolverAccessToken = accessToken
 			return serviceURI, fakeResolverError
 		}
 		config.DefaultResolver = fakeResolver
@@ -70,7 +60,7 @@ var _ = Describe("Encrypt file", func() {
 	It("should call the config server's /encrypt endpoint with content from a file", func() {
 		testDir := config.CreateTempDir()
 		testFile := config.CreateFile(testDir, "file-to-encrypt.txt")
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testFile, fakeAuthClient)
+		_, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", testFile, fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(1))
 		url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPostArgsForCall(0)
@@ -81,7 +71,7 @@ var _ = Describe("Encrypt file", func() {
 	})
 
 	It("should fail when given a non-existent file", func() {
-		output, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient)
+		_, err = config.Encrypt(fakeCliConnection, serviceRegistryInstance, "", "bogus.txt", fakeAuthClient)
 
 		Expect(fakeAuthClient.DoAuthenticatedPostCallCount()).Should(Equal(0))
 		Expect(err.Error()).To(Equal("Error opening file at path bogus.txt : open bogus.txt: no such file or directory"))

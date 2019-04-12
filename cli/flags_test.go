@@ -27,12 +27,11 @@ var _ = Describe("Flags", func() {
 	var (
 		args           = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "-i", "1", "-i", "2", "-i", "3"}
 		instanceIdx    *int
-		positionalArgs []string
 		err            error
 	)
 
 	JustBeforeEach(func() {
-		instanceIdx, positionalArgs, err = cli.ParseFlags(args)
+		instanceIdx, _, err = cli.ParseFlags(args)
 	})
 
 	Context("when duplicate flags are passed on command line", func() {
