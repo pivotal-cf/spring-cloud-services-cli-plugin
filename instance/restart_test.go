@@ -10,5 +10,5 @@ var _ = Describe("Restart", CommandTestBody("restart",
 	func(fakeAuthClient *httpclientfakes.FakeAuthenticatedClient, serviceInstanceAdminURL string,
 		accessToken string) (string, error) {
 
-		return instance.Restart(fakeAuthClient, serviceInstanceAdminURL, accessToken)
+		return instance.NewRestartOperation().Run(fakeAuthClient, serviceInstanceAdminURL, accessToken)
 	}))

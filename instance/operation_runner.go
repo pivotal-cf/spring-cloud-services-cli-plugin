@@ -17,42 +17,40 @@
 package instance
 
 import (
-	"fmt"
-	"net/url"
-
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-type Operation func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
+type Operation interface {
+	Run(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
+	IsLifecycleOperation() bool
+}
 
-func RunOperation(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, operation Operation) (string, error) {
-	serviceInstanceAdminURL, accessToken, err := accessServiceBroker(serviceInstanceName, cliConnection)
+func RunOperation(
+	cliConnection plugin.CliConnection,
+	authClient httpclient.AuthenticatedClient,
+	serviceInstanceName string,
+	managementEndpointResolver ManagementEndpointResolver,
+	operation Operation) (string, error) {
+
+	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	return operation(authClient, serviceInstanceAdminURL, accessToken)
+	serviceInstanceAdminURL, err := managementEndpointResolver(
+		cliConnection,
+		authClient,
+		serviceInstanceName,
+		accessToken,
+		operation.IsLifecycleOperation())
+
+	if err != nil {
+		return "", err
+	}
+
+	return operation.Run(authClient, serviceInstanceAdminURL, accessToken)
 }
 
-func accessServiceBroker(serviceInstanceName string, cliConnection plugin.CliConnection) (string, string, error) {
-	accessToken, err := cfutil.GetToken(cliConnection)
-	if err != nil {
-		return "", "", err
-	}
 
-	serviceModel, err := cliConnection.GetService(serviceInstanceName)
-	if err != nil {
-		return "", "", fmt.Errorf("Service instance not found: %s", err)
-	}
-
-	parsedUrl, err := url.Parse(serviceModel.DashboardUrl)
-	if err != nil {
-		return "", "", err
-	}
-
-	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s",  serviceModel.Guid)
-
-	return parsedUrl.String(), accessToken, nil
-}

@@ -37,7 +37,7 @@ var _ = Describe("View", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.View(fakeAuthClient, serviceInstanceAdminURL, testAccessToken)
+		output, err = instance.NewViewOperation().Run(fakeAuthClient, serviceInstanceAdminURL, testAccessToken)
 	})
 
 	It("should issue a GET with the correct parameters", func() {

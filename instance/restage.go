@@ -22,7 +22,17 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-func Restage(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?restage", serviceInstanceAdminURL), accessToken)
+type RestageOperation struct{}
+
+func (so *RestageOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?restage=", serviceInstanceAdminURL), accessToken)
 	return "", err
+}
+
+func (so *RestageOperation) IsLifecycleOperation() (bool) {
+	return true
+}
+
+func NewRestageOperation() *RestageOperation {
+	return &RestageOperation{}
 }

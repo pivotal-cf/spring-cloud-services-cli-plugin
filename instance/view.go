@@ -17,13 +17,12 @@
 package instance
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-
-	"bytes"
 
 	"strings"
 
@@ -62,8 +61,10 @@ type BackingAppInstance struct {
 	Details     string
 }
 
-func View(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	bodyReader, statusCode, err := authClient.DoAuthenticatedGet(serviceInstanceAdminURL, accessToken)
+type ViewOperation struct{}
+
+func (so *ViewOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	bodyReader, statusCode, err := authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL, accessToken)
 	if err != nil {
 		return "", err
 	}
@@ -86,6 +87,14 @@ func View(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL str
 	}
 
 	return RenderView(&viewInstanceResp)
+}
+
+func (so *ViewOperation) IsLifecycleOperation() (bool) {
+	return false
+}
+
+func NewViewOperation() *ViewOperation {
+	return &ViewOperation{}
 }
 
 func RenderView(viewInstanceResp *ViewInstanceResp) (string, error) {

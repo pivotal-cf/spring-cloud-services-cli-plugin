@@ -17,16 +17,37 @@
 package instance_test
 
 import (
-	"errors"
-
-	"code.cloudfoundry.org/cli/plugin/models"
+	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 )
+
+type FakeOperation struct {
+	delegate             func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
+	isLifecycleOperation bool
+}
+
+func (fo *FakeOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	return fo.delegate(authenticatedClient, serviceInstanceAdminURL, accessToken)
+}
+
+func (fo *FakeOperation) IsLifecycleOperation() (bool) {
+	return fo.isLifecycleOperation
+}
+
+func NewFakeOperation(
+	delegate func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error),
+	isLifecycleOperation bool) *FakeOperation {
+	return &FakeOperation{
+		delegate:             delegate,
+		isLifecycleOperation: isLifecycleOperation,
+	}
+}
 
 var _ = Describe("RunOperation", func() {
 
@@ -39,12 +60,13 @@ var _ = Describe("RunOperation", func() {
 
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient          *httpclientfakes.FakeAuthenticatedClient
+		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
 		output            string
 
-		fakeOperation      instance.Operation
-		operationCallCount int
-		operationArgs      []operationArg
+		fakeManagementEndpointResolver instance.ManagementEndpointResolver
+		fakeOperationImplementation    func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
+		operationCallCount             int
+		operationArgs                  []operationArg
 
 		operationStringReturn string
 		operationErrReturn    error
@@ -65,13 +87,17 @@ var _ = Describe("RunOperation", func() {
 		operationArgs = []operationArg{}
 		operationStringReturn = ""
 		operationErrReturn = nil
-		fakeOperation = func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+		fakeOperationImplementation = func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
 			operationCallCount++
 			operationArgs = append(operationArgs, operationArg{
 				serviceInstanceAdminURL: serviceInstanceAdminURL,
 				accessToken:             accessToken,
 			})
 			return operationStringReturn, operationErrReturn
+		}
+
+		fakeManagementEndpointResolver = func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
+			return "https://spring-cloud-broker.some.host.name/cli/instances/guid", nil
 		}
 
 		errMessage = "failure is not an option"
@@ -81,7 +107,12 @@ var _ = Describe("RunOperation", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.RunOperation(fakeCliConnection, fakeAuthClient, serviceInstanceName, fakeOperation)
+		output, err = instance.RunOperation(
+			fakeCliConnection,
+			fakeAuthClient,
+			serviceInstanceName,
+			fakeManagementEndpointResolver,
+			NewFakeOperation(fakeOperationImplementation, true))
 	})
 
 	It("should attempt to obtain an access token", func() {
@@ -101,32 +132,23 @@ var _ = Describe("RunOperation", func() {
 
 	Context("when the access token is available", func() {
 		BeforeEach(func() {
-			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
+			fakeCliConnection.AccessTokenReturns("bearer " + testAccessToken, nil)
 		})
 
-		It("should get the service", func() {
-			Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
-			Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal(serviceInstanceName))
-		})
-
-		Context("when the service instance is not found", func() {
+		Context("when the admin URL is not retrieved correctly", func() {
 			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{}, testError)
+				fakeManagementEndpointResolver = func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
+					return "", errors.New("some error retrieving the admin URL")
+				}
 			})
 
-			It("should propagate the error", func() {
-				Expect(err).To(MatchError("Service instance not found: " + errMessage))
+			It("should return a suitable error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError("some error retrieving the admin URL"))
 			})
 		})
 
-		Context("when the dashboard URL is in the correct format", func() {
-			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-					DashboardUrl: "https://spring-cloud-broker.some.host.name/x/y/guid",
-					Guid: "guid",
-				}, nil)
-			})
-
+		Context("when the admin URL is retrieved correctly", func() {
 			It("invoke the operation with the correct parameters", func() {
 				Expect(operationCallCount).To(Equal(1))
 				args := operationArgs[0]
