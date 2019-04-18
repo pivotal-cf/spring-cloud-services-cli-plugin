@@ -17,15 +17,17 @@
 package instance
 
 import (
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
-	"net/http"
-	"fmt"
 	"errors"
+	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"io/ioutil"
+	"net/http"
 )
 
-func Parameters(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	bodyReader, statusCode, err := authClient.DoAuthenticatedGet(serviceInstanceAdminURL+"/parameters", accessToken)
+type parametersOperation struct{}
+
+func (so *parametersOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	bodyReader, statusCode, err := authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL+"/parameters", accessToken)
 	if err != nil {
 		return "", err
 	}
@@ -44,4 +46,12 @@ func Parameters(authClient httpclient.AuthenticatedClient, serviceInstanceAdminU
 	}
 
 	return string(body), nil
+}
+
+func (so *parametersOperation) IsLifecycleOperation() bool {
+	return false
+}
+
+func NewParametersOperation() Operation {
+	return &parametersOperation{}
 }

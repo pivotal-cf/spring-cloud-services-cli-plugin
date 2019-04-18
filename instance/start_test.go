@@ -10,5 +10,5 @@ var _ = Describe("Start", CommandTestBody("start",
 	func(fakeAuthClient *httpclientfakes.FakeAuthenticatedClient, serviceInstanceAdminURL string,
 		accessToken string) (string, error) {
 
-		return instance.Start(fakeAuthClient, serviceInstanceAdminURL, accessToken)
+		return instance.NewStartOperation().Run(fakeAuthClient, serviceInstanceAdminURL, accessToken)
 	}))

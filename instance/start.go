@@ -22,7 +22,17 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-func Start(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?start", serviceInstanceAdminURL), accessToken)
+type startOperation struct{}
+
+func (so *startOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?start=", serviceInstanceAdminURL), accessToken)
 	return "", err
+}
+
+func (so *startOperation) IsLifecycleOperation() bool {
+	return true
+}
+
+func NewStartOperation() Operation {
+	return &startOperation{}
 }

@@ -4,12 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"bytes"
+	"errors"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
-	"errors"
-	"net/http"
 	"io/ioutil"
-	"bytes"
+	"net/http"
 )
 
 var _ = Describe("Parameters", func() {
@@ -32,7 +32,7 @@ var _ = Describe("Parameters", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.Parameters(fakeAuthClient, serviceInstanceAdminURL, testAccessToken)
+		output, err = instance.NewParametersOperation().Run(fakeAuthClient, serviceInstanceAdminURL, testAccessToken)
 	})
 
 	It("should issue a GET to the service broker parameters endpoint with the correct parameters", func() {
