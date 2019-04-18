@@ -52,6 +52,6 @@ func (so *parametersOperation) IsLifecycleOperation() bool {
 	return false
 }
 
-func NewParametersOperation() *parametersOperation {
+func NewParametersOperation() Operation {
 	return &parametersOperation{}
 }

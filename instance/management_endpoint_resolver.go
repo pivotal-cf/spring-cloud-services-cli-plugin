@@ -24,21 +24,29 @@ import (
 	"strings"
 )
 
-type ManagementEndpointResolver func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error)
+//go:generate counterfeiter -o resolverfakes/fake_management_endpoint_resolver.go . ManagementEndpointResolver
+type ManagementEndpointResolver interface {
+	GetManagementEndpoint(serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error)
+}
 
-func GetManagementEndpoint(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
-	serviceModel, err := cliConnection.GetService(serviceInstanceName)
+type authenticatedManagementEndpointResolver struct {
+	cliConnection plugin.CliConnection
+	authClient    httpclient.AuthenticatedClient
+}
+
+func (amer *authenticatedManagementEndpointResolver) GetManagementEndpoint(serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
+	serviceModel, err := amer.cliConnection.GetService(serviceInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("service instance not found: %s", err)
 	}
 
-	isVersion3, err := isVersion3(cliConnection, authClient, accessToken)
+	isVersion3, err := isVersion3(amer.cliConnection, amer.authClient, accessToken)
 	if err != nil {
 		return "", err
 	}
 
 	if isVersion3 && isLifecycleOperation {
-		serviceBrokerV3Url, err := serviceBrokerV3Url(cliConnection)
+		serviceBrokerV3Url, err := serviceBrokerV3Url(amer.cliConnection)
 		if err != nil {
 			return "", err
 		}
@@ -85,4 +93,14 @@ func serviceBrokerV3Url(cliConnection plugin.CliConnection) (string, error) {
 	systemDomain := apiUrl[posFirst+1:]
 	serviceBrokerV3Url := "https://scs-service-broker." + systemDomain
 	return serviceBrokerV3Url, nil
+}
+
+func NewAuthenticatedManagementEndpointResolver(
+	cliConnection plugin.CliConnection,
+	authClient httpclient.AuthenticatedClient) ManagementEndpointResolver {
+
+	return &authenticatedManagementEndpointResolver{
+		cliConnection: cliConnection,
+		authClient:    authClient,
+	}
 }

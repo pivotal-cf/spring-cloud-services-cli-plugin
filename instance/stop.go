@@ -33,6 +33,6 @@ func (so *stopOperation) IsLifecycleOperation() bool {
 	return true
 }
 
-func NewStopOperation() *stopOperation {
+func NewStopOperation() Operation {
 	return &stopOperation{}
 }

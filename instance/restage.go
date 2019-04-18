@@ -33,6 +33,6 @@ func (so *restageOperation) IsLifecycleOperation() bool {
 	return true
 }
 
-func NewRestageOperation() *restageOperation {
+func NewRestageOperation() Operation {
 	return &restageOperation{}
 }

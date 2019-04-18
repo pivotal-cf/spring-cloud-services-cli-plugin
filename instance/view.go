@@ -93,7 +93,7 @@ func (so *viewOperation) IsLifecycleOperation() bool {
 	return false
 }
 
-func NewViewOperation() *viewOperation {
+func NewViewOperation() Operation {
 	return &viewOperation{}
 }
 

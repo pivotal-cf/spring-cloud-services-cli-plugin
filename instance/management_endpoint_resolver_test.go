@@ -58,9 +58,8 @@ var _ = Describe("GetManagementEndpoint", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.GetManagementEndpoint(
-			fakeCliConnection,
-			fakeAuthClient,
+		managementEndpointResolver := instance.NewAuthenticatedManagementEndpointResolver(fakeCliConnection, fakeAuthClient)
+		output, err = managementEndpointResolver.GetManagementEndpoint(
 			serviceInstanceName,
 			testAccessToken,
 			isLifecycleOperation)

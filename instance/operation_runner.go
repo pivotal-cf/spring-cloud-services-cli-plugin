@@ -28,21 +28,26 @@ type Operation interface {
 	IsLifecycleOperation() bool
 }
 
-func RunOperation(
-	cliConnection plugin.CliConnection,
-	authClient httpclient.AuthenticatedClient,
+type OperationRunner interface {
+	RunOperation(serviceInstanceName string, operation Operation) (string, error)
+}
+
+type authenticatedOperationRunner struct {
+	cliConnection              plugin.CliConnection
+	authClient                 httpclient.AuthenticatedClient
+	managementEndpointResolver ManagementEndpointResolver
+}
+
+func (aor *authenticatedOperationRunner) RunOperation(
 	serviceInstanceName string,
-	managementEndpointResolver ManagementEndpointResolver,
 	operation Operation) (string, error) {
 
-	accessToken, err := cfutil.GetToken(cliConnection)
+	accessToken, err := cfutil.GetToken(aor.cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	serviceInstanceAdminURL, err := managementEndpointResolver(
-		cliConnection,
-		authClient,
+	serviceInstanceAdminURL, err := aor.managementEndpointResolver.GetManagementEndpoint(
 		serviceInstanceName,
 		accessToken,
 		operation.IsLifecycleOperation())
@@ -51,5 +56,17 @@ func RunOperation(
 		return "", err
 	}
 
-	return operation.Run(authClient, serviceInstanceAdminURL, accessToken)
+	return operation.Run(aor.authClient, serviceInstanceAdminURL, accessToken)
+}
+
+func NewAuthenticatedOperationRunner(
+	cliConnection plugin.CliConnection,
+	authClient httpclient.AuthenticatedClient,
+	managementEndpointResolver ManagementEndpointResolver) OperationRunner {
+
+	return &authenticatedOperationRunner{
+		cliConnection:              cliConnection,
+		authClient:                 authClient,
+		managementEndpointResolver: managementEndpointResolver,
+	}
 }

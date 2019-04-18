@@ -17,28 +17,29 @@
 package instance_test
 
 import (
-	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/operationfakes"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/resolverfakes"
 )
 
-var _ = Describe("RunOperation", func() {
+var _ = Describe("OperationRunner", func() {
 
 	const testAccessToken = "someaccesstoken"
 
 	var (
+		operationRunner instance.OperationRunner
+
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
 		fakeOperation     *operationfakes.FakeOperation
 		output            string
 
-		fakeManagementEndpointResolver instance.ManagementEndpointResolver
+		fakeManagementEndpointResolver *resolverfakes.FakeManagementEndpointResolver
 
 		errMessage string
 		testError  error
@@ -55,9 +56,9 @@ var _ = Describe("RunOperation", func() {
 
 		fakeOperation.IsLifecycleOperationReturns(true)
 
-		fakeManagementEndpointResolver = func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
-			return "https://spring-cloud-broker.some.host.name/cli/instances/guid", nil
-		}
+		fakeManagementEndpointResolver = &resolverfakes.FakeManagementEndpointResolver{}
+
+		fakeManagementEndpointResolver.GetManagementEndpointReturns("https://spring-cloud-broker.some.host.name/cli/instances/guid", nil)
 
 		errMessage = "failure is not an option"
 		testError = errors.New(errMessage)
@@ -66,11 +67,9 @@ var _ = Describe("RunOperation", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.RunOperation(
-			fakeCliConnection,
-			fakeAuthClient,
+		operationRunner = instance.NewAuthenticatedOperationRunner(fakeCliConnection, fakeAuthClient, fakeManagementEndpointResolver)
+		output, err = operationRunner.RunOperation(
 			serviceInstanceName,
-			fakeManagementEndpointResolver,
 			fakeOperation)
 	})
 
@@ -96,9 +95,7 @@ var _ = Describe("RunOperation", func() {
 
 		Context("when the admin URL is not retrieved correctly", func() {
 			BeforeEach(func() {
-				fakeManagementEndpointResolver = func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
-					return "", errors.New("some error retrieving the admin URL")
-				}
+				fakeManagementEndpointResolver.GetManagementEndpointReturns("", errors.New("some error retrieving the admin URL"))
 			})
 
 			It("should return a suitable error", func() {

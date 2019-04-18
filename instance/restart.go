@@ -33,6 +33,6 @@ func (so *restartOperation) IsLifecycleOperation() bool {
 	return true
 }
 
-func NewRestartOperation() *restartOperation {
+func NewRestartOperation() Operation {
 	return &restartOperation{}
 }
