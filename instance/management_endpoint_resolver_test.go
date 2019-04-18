@@ -100,16 +100,6 @@ var _ = Describe("GetManagementEndpoint", func() {
 				})
 			})
 
-			Context("getting an unexpected value for API endpoint", func() {
-				BeforeEach(func() {
-					fakeCliConnection.ApiEndpointReturns("https://apy.some.host.name", nil)
-				})
-
-				It("should propagate the error", func() {
-					Expect(err).To(MatchError("unexpected CF API endpoint: https://apy.some.host.name"))
-				})
-			})
-
 			Context("checking the V3 broker URL", func() {
 				BeforeEach(func() {
 					fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
@@ -155,8 +145,24 @@ var _ = Describe("GetManagementEndpoint", func() {
 				fakeAuthClient.DoAuthenticatedGetReturns(nil, 404, nil)
 			})
 
-			It("should return the dashboard URL", func() {
-				Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
+			Context("when it's a lifecycle operation", func() {
+				BeforeEach(func() {
+					isLifecycleOperation = true
+				})
+
+				It("should return the broker URL for SCS3", func() {
+					Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
+				})
+			})
+
+			Context("when it's not a lifecycle operation", func() {
+				BeforeEach(func() {
+					isLifecycleOperation = false
+				})
+
+				It("should return the dashboard URL", func() {
+					Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
+				})
 			})
 		})
 	})

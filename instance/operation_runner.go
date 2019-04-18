@@ -22,6 +22,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
+//go:generate counterfeiter -o operationfakes/fake_operation.go . Operation
 type Operation interface {
 	Run(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
 	IsLifecycleOperation() bool

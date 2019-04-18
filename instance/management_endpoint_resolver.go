@@ -18,7 +18,6 @@ package instance
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
-	"errors"
 	"fmt"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"net/url"
@@ -82,12 +81,8 @@ func serviceBrokerV3Url(cliConnection plugin.CliConnection) (string, error) {
 		return "", err
 	}
 
-	posFirst := strings.Index(apiUrl, "api.")
-	if posFirst < 0 {
-		return "", errors.New(fmt.Sprintf("unexpected CF API endpoint: %s", apiUrl))
-	}
-
-	systemDomain := apiUrl[posFirst+4:]
+	posFirst := strings.Index(apiUrl, ".")
+	systemDomain := apiUrl[posFirst+1:]
 	serviceBrokerV3Url := "https://scs-service-broker." + systemDomain
 	return serviceBrokerV3Url, nil
 }

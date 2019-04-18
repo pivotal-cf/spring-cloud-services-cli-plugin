@@ -24,9 +24,9 @@ import (
 	"net/http"
 )
 
-type ParametersOperation struct{}
+type parametersOperation struct{}
 
-func (so *ParametersOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+func (so *parametersOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
 	bodyReader, statusCode, err := authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL+"/parameters", accessToken)
 	if err != nil {
 		return "", err
@@ -48,10 +48,10 @@ func (so *ParametersOperation) Run(authenticatedClient httpclient.AuthenticatedC
 	return string(body), nil
 }
 
-func (so *ParametersOperation) IsLifecycleOperation() (bool) {
+func (so *parametersOperation) IsLifecycleOperation() (bool) {
 	return false
 }
 
-func NewParametersOperation() *ParametersOperation {
-	return &ParametersOperation{}
+func NewParametersOperation() *parametersOperation {
+	return &parametersOperation{}
 }

@@ -22,17 +22,17 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-type StopOperation struct{}
+type stopOperation struct{}
 
-func (so *StopOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+func (so *stopOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
 	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?stop=", serviceInstanceAdminURL), accessToken)
 	return "", err
 }
 
-func (so *StopOperation) IsLifecycleOperation() (bool) {
+func (so *stopOperation) IsLifecycleOperation() (bool) {
 	return true
 }
 
-func NewStopOperation() *StopOperation {
-	return &StopOperation{}
+func NewStopOperation() *stopOperation {
+	return &stopOperation{}
 }

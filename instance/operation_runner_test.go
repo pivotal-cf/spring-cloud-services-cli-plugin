@@ -25,51 +25,20 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/operationfakes"
 )
-
-type FakeOperation struct {
-	delegate             func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
-	isLifecycleOperation bool
-}
-
-func (fo *FakeOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	return fo.delegate(authenticatedClient, serviceInstanceAdminURL, accessToken)
-}
-
-func (fo *FakeOperation) IsLifecycleOperation() (bool) {
-	return fo.isLifecycleOperation
-}
-
-func NewFakeOperation(
-	delegate func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error),
-	isLifecycleOperation bool) *FakeOperation {
-	return &FakeOperation{
-		delegate:             delegate,
-		isLifecycleOperation: isLifecycleOperation,
-	}
-}
 
 var _ = Describe("RunOperation", func() {
 
 	const testAccessToken = "someaccesstoken"
 
-	type operationArg struct {
-		serviceInstanceAdminURL string
-		accessToken             string
-	}
-
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
+		fakeOperation	  *operationfakes.FakeOperation
 		output            string
 
 		fakeManagementEndpointResolver instance.ManagementEndpointResolver
-		fakeOperationImplementation    func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
-		operationCallCount             int
-		operationArgs                  []operationArg
-
-		operationStringReturn string
-		operationErrReturn    error
 
 		errMessage string
 		testError  error
@@ -82,19 +51,9 @@ var _ = Describe("RunOperation", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
+		fakeOperation = &operationfakes.FakeOperation{}
 
-		operationCallCount = 0
-		operationArgs = []operationArg{}
-		operationStringReturn = ""
-		operationErrReturn = nil
-		fakeOperationImplementation = func(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-			operationCallCount++
-			operationArgs = append(operationArgs, operationArg{
-				serviceInstanceAdminURL: serviceInstanceAdminURL,
-				accessToken:             accessToken,
-			})
-			return operationStringReturn, operationErrReturn
-		}
+		fakeOperation.IsLifecycleOperationReturns(true)
 
 		fakeManagementEndpointResolver = func(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
 			return "https://spring-cloud-broker.some.host.name/cli/instances/guid", nil
@@ -112,7 +71,7 @@ var _ = Describe("RunOperation", func() {
 			fakeAuthClient,
 			serviceInstanceName,
 			fakeManagementEndpointResolver,
-			NewFakeOperation(fakeOperationImplementation, true))
+			fakeOperation)
 	})
 
 	It("should attempt to obtain an access token", func() {
@@ -150,15 +109,16 @@ var _ = Describe("RunOperation", func() {
 
 		Context("when the admin URL is retrieved correctly", func() {
 			It("invoke the operation with the correct parameters", func() {
-				Expect(operationCallCount).To(Equal(1))
-				args := operationArgs[0]
-				Expect(args.serviceInstanceAdminURL).To(Equal("https://spring-cloud-broker.some.host.name/cli/instances/guid"))
-				Expect(args.accessToken).To(Equal(testAccessToken))
+				Expect(fakeOperation.RunCallCount()).To(Equal(1))
+				_, serviceInstanceAdminURL, accessToken := fakeOperation.RunArgsForCall(0)
+
+				Expect(serviceInstanceAdminURL).To(Equal("https://spring-cloud-broker.some.host.name/cli/instances/guid"))
+				Expect(accessToken).To(Equal(testAccessToken))
 			})
 
 			Context("when the operation returns some output", func() {
 				BeforeEach(func() {
-					operationStringReturn = "some output"
+					fakeOperation.RunReturns("some output", nil)
 				})
 
 				It("should return the output", func() {
@@ -169,7 +129,7 @@ var _ = Describe("RunOperation", func() {
 
 			Context("when the operation returns an error", func() {
 				BeforeEach(func() {
-					operationErrReturn = testError
+					fakeOperation.RunReturns("", testError)
 				})
 
 				It("should return the error", func() {

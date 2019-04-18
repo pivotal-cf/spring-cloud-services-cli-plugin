@@ -22,17 +22,17 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-type RestartOperation struct{}
+type restartOperation struct{}
 
-func (so *RestartOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
+func (so *restartOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
 	_, err := authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?restart=", serviceInstanceAdminURL), accessToken)
 	return "", err
 }
 
-func (so *RestartOperation) IsLifecycleOperation() (bool) {
+func (so *restartOperation) IsLifecycleOperation() (bool) {
 	return true
 }
 
-func NewRestartOperation() *RestartOperation {
-	return &RestartOperation{}
+func NewRestartOperation() *restartOperation {
+	return &restartOperation{}
 }
