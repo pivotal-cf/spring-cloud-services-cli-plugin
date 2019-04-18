@@ -53,5 +53,3 @@ func RunOperation(
 
 	return operation.Run(authClient, serviceInstanceAdminURL, accessToken)
 }
-
-

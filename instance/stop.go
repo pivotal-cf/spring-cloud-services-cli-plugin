@@ -29,7 +29,7 @@ func (so *stopOperation) Run(authenticatedClient httpclient.AuthenticatedClient,
 	return "", err
 }
 
-func (so *stopOperation) IsLifecycleOperation() (bool) {
+func (so *stopOperation) IsLifecycleOperation() bool {
 	return true
 }
 

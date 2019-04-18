@@ -89,7 +89,7 @@ func (so *viewOperation) Run(authenticatedClient httpclient.AuthenticatedClient,
 	return RenderView(&viewInstanceResp)
 }
 
-func (so *viewOperation) IsLifecycleOperation() (bool) {
+func (so *viewOperation) IsLifecycleOperation() bool {
 	return false
 }
 

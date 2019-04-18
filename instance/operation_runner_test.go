@@ -35,7 +35,7 @@ var _ = Describe("RunOperation", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeOperation	  *operationfakes.FakeOperation
+		fakeOperation     *operationfakes.FakeOperation
 		output            string
 
 		fakeManagementEndpointResolver instance.ManagementEndpointResolver
@@ -91,7 +91,7 @@ var _ = Describe("RunOperation", func() {
 
 	Context("when the access token is available", func() {
 		BeforeEach(func() {
-			fakeCliConnection.AccessTokenReturns("bearer " + testAccessToken, nil)
+			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
 		})
 
 		Context("when the admin URL is not retrieved correctly", func() {

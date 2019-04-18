@@ -4,12 +4,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"bytes"
+	"errors"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
-	"errors"
-	"net/http"
 	"io/ioutil"
-	"bytes"
+	"net/http"
 )
 
 var _ = Describe("Parameters", func() {

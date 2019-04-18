@@ -48,7 +48,7 @@ func (so *parametersOperation) Run(authenticatedClient httpclient.AuthenticatedC
 	return string(body), nil
 }
 
-func (so *parametersOperation) IsLifecycleOperation() (bool) {
+func (so *parametersOperation) IsLifecycleOperation() bool {
 	return false
 }
 

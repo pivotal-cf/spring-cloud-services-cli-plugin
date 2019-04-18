@@ -51,7 +51,7 @@ func GetManagementEndpoint(cliConnection plugin.CliConnection, authClient httpcl
 		return "", err
 	}
 
-	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s",  serviceModel.Guid)
+	parsedUrl.Path = fmt.Sprintf("/cli/instances/%s", serviceModel.Guid)
 
 	return parsedUrl.String(), nil
 }
@@ -62,7 +62,7 @@ func isVersion3(cliConnection plugin.CliConnection, authClient httpclient.Authen
 		return false, err
 	}
 
-	_, statusCode, err := authClient.DoAuthenticatedGet(serviceBrokerV3Url + "/actuator/info", accessToken)
+	_, statusCode, err := authClient.DoAuthenticatedGet(serviceBrokerV3Url+"/actuator/info", accessToken)
 
 	if err != nil && statusCode != 404 {
 		return false, err

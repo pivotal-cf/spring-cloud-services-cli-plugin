@@ -13,7 +13,7 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-*/
+ */
 package instance_test
 
 import (
@@ -42,7 +42,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 		testError  error
 
 		output string
-		err error
+		err    error
 	)
 
 	BeforeEach(func() {
@@ -81,11 +81,11 @@ var _ = Describe("GetManagementEndpoint", func() {
 		})
 	})
 
-	Context("when the service instance is found", func(){
+	Context("when the service instance is found", func() {
 		BeforeEach(func() {
 			fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
 				DashboardUrl: "https://dasboard-url.some.host.name/x/y/guid",
-				Guid: "guid",
+				Guid:         "guid",
 			}, nil)
 		})
 
