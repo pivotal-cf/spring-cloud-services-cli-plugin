@@ -32,7 +32,7 @@ var _ = Describe("Parameters", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.NewParametersOperation().Run(fakeAuthClient, serviceInstanceAdminURL, testAccessToken)
+		output, err = instance.NewParametersOperation(fakeAuthClient).Run(serviceInstanceAdminURL, testAccessToken)
 	})
 
 	It("should issue a GET to the service broker parameters endpoint with the correct parameters", func() {

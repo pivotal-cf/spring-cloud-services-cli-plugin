@@ -10,5 +10,5 @@ var _ = Describe("Restage", CommandTestBody("restage",
 	func(fakeAuthClient *httpclientfakes.FakeAuthenticatedClient, serviceInstanceAdminURL string,
 		accessToken string) (string, error) {
 
-		return instance.NewRestageOperation().Run(fakeAuthClient, serviceInstanceAdminURL, accessToken)
+		return instance.NewRestageOperation(fakeAuthClient).Run(serviceInstanceAdminURL, accessToken)
 	}))

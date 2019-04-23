@@ -19,12 +19,11 @@ package instance
 import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
 //go:generate counterfeiter -o operationfakes/fake_operation.go . Operation
 type Operation interface {
-	Run(authClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error)
+	Run(serviceInstanceAdminURL string, accessToken string) (string, error)
 	IsLifecycleOperation() bool
 }
 
@@ -34,7 +33,6 @@ type OperationRunner interface {
 
 type authenticatedOperationRunner struct {
 	cliConnection              plugin.CliConnection
-	authClient                 httpclient.AuthenticatedClient
 	managementEndpointResolver ManagementEndpointResolver
 }
 
@@ -56,17 +54,15 @@ func (aor *authenticatedOperationRunner) RunOperation(
 		return "", err
 	}
 
-	return operation.Run(aor.authClient, serviceInstanceAdminURL, accessToken)
+	return operation.Run(serviceInstanceAdminURL, accessToken)
 }
 
 func NewAuthenticatedOperationRunner(
 	cliConnection plugin.CliConnection,
-	authClient httpclient.AuthenticatedClient,
 	managementEndpointResolver ManagementEndpointResolver) OperationRunner {
 
 	return &authenticatedOperationRunner{
 		cliConnection:              cliConnection,
-		authClient:                 authClient,
 		managementEndpointResolver: managementEndpointResolver,
 	}
 }

@@ -72,7 +72,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	authClient := httpclient.NewAuthenticatedClient(client)
 
 	managementEndpointResolver := instance.NewAuthenticatedManagementEndpointResolver(cliConnection, authClient)
-	operationRunner := instance.NewAuthenticatedOperationRunner(cliConnection, authClient, managementEndpointResolver)
+	operationRunner := instance.NewAuthenticatedOperationRunner(cliConnection, managementEndpointResolver)
 
 	argsConsumer := cli.NewArgConsumer(positionalArgs, diagnoseWithHelp)
 
@@ -93,37 +93,37 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 	case "spring-cloud-service-stop":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return operationRunner.RunOperation(serviceInstanceName, instance.NewStopOperation())
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewStopOperation(authClient))
 		})
 
 	case "spring-cloud-service-start":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Starting service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return operationRunner.RunOperation(serviceInstanceName, instance.NewStartOperation())
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewStartOperation(authClient))
 		})
 
 	case "spring-cloud-service-restart":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Restarting service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return operationRunner.RunOperation(serviceInstanceName, instance.NewRestartOperation())
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewRestartOperation(authClient))
 		})
 
 	case "spring-cloud-service-restage":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Restaging service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return operationRunner.RunOperation(serviceInstanceName, instance.NewRestageOperation())
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewRestageOperation(authClient))
 		})
 
 	case "spring-cloud-service-view":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Viewing service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
-			return operationRunner.RunOperation(serviceInstanceName, instance.NewViewOperation())
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewViewOperation(authClient))
 		})
 
 	case "spring-cloud-service-configuration":
 		configServerInstanceName := getServiceInstanceName(argsConsumer)
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
-			return operationRunner.RunOperation(configServerInstanceName, instance.NewParametersOperation())
+			return operationRunner.RunOperation(configServerInstanceName, instance.NewParametersOperation(authClient))
 		})
 
 	case "service-registry-enable":

@@ -4,7 +4,6 @@ package operationfakes
 import (
 	"sync"
 
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 )
 
@@ -19,12 +18,11 @@ type FakeOperation struct {
 	isLifecycleOperationReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	RunStub        func(httpclient.AuthenticatedClient, string, string) (string, error)
+	RunStub        func(string, string) (string, error)
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
-		arg1 httpclient.AuthenticatedClient
+		arg1 string
 		arg2 string
-		arg3 string
 	}
 	runReturns struct {
 		result1 string
@@ -90,18 +88,17 @@ func (fake *FakeOperation) IsLifecycleOperationReturnsOnCall(i int, result1 bool
 	}{result1}
 }
 
-func (fake *FakeOperation) Run(arg1 httpclient.AuthenticatedClient, arg2 string, arg3 string) (string, error) {
+func (fake *FakeOperation) Run(arg1 string, arg2 string) (string, error) {
 	fake.runMutex.Lock()
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		arg1 httpclient.AuthenticatedClient
+		arg1 string
 		arg2 string
-		arg3 string
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("Run", []interface{}{arg1, arg2, arg3})
+	}{arg1, arg2})
+	fake.recordInvocation("Run", []interface{}{arg1, arg2})
 	fake.runMutex.Unlock()
 	if fake.RunStub != nil {
-		return fake.RunStub(arg1, arg2, arg3)
+		return fake.RunStub(arg1, arg2)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -116,17 +113,17 @@ func (fake *FakeOperation) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeOperation) RunCalls(stub func(httpclient.AuthenticatedClient, string, string) (string, error)) {
+func (fake *FakeOperation) RunCalls(stub func(string, string) (string, error)) {
 	fake.runMutex.Lock()
 	defer fake.runMutex.Unlock()
 	fake.RunStub = stub
 }
 
-func (fake *FakeOperation) RunArgsForCall(i int) (httpclient.AuthenticatedClient, string, string) {
+func (fake *FakeOperation) RunArgsForCall(i int) (string, string) {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	argsForCall := fake.runArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+	return argsForCall.arg1, argsForCall.arg2
 }
 
 func (fake *FakeOperation) RunReturns(result1 string, result2 error) {

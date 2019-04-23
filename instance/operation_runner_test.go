@@ -21,7 +21,6 @@ import (
 	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/operationfakes"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/resolverfakes"
@@ -35,7 +34,6 @@ var _ = Describe("OperationRunner", func() {
 		operationRunner instance.OperationRunner
 
 		fakeCliConnection *pluginfakes.FakeCliConnection
-		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
 		fakeOperation     *operationfakes.FakeOperation
 		output            string
 
@@ -51,7 +49,6 @@ var _ = Describe("OperationRunner", func() {
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
-		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
 		fakeOperation = &operationfakes.FakeOperation{}
 
 		fakeOperation.IsLifecycleOperationReturns(true)
@@ -67,7 +64,7 @@ var _ = Describe("OperationRunner", func() {
 	})
 
 	JustBeforeEach(func() {
-		operationRunner = instance.NewAuthenticatedOperationRunner(fakeCliConnection, fakeAuthClient, fakeManagementEndpointResolver)
+		operationRunner = instance.NewAuthenticatedOperationRunner(fakeCliConnection, fakeManagementEndpointResolver)
 		output, err = operationRunner.RunOperation(
 			serviceInstanceName,
 			fakeOperation)
@@ -107,7 +104,7 @@ var _ = Describe("OperationRunner", func() {
 		Context("when the admin URL is retrieved correctly", func() {
 			It("invoke the operation with the correct parameters", func() {
 				Expect(fakeOperation.RunCallCount()).To(Equal(1))
-				_, serviceInstanceAdminURL, accessToken := fakeOperation.RunArgsForCall(0)
+				serviceInstanceAdminURL, accessToken := fakeOperation.RunArgsForCall(0)
 
 				Expect(serviceInstanceAdminURL).To(Equal("https://spring-cloud-broker.some.host.name/cli/instances/guid"))
 				Expect(accessToken).To(Equal(testAccessToken))
