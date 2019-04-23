@@ -61,10 +61,12 @@ type BackingAppInstance struct {
 	Details     string
 }
 
-type viewOperation struct{}
+type viewOperation struct{
+	authenticatedClient httpclient.AuthenticatedClient
+}
 
-func (so *viewOperation) Run(authenticatedClient httpclient.AuthenticatedClient, serviceInstanceAdminURL string, accessToken string) (string, error) {
-	bodyReader, statusCode, err := authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL, accessToken)
+func (vo *viewOperation) Run(serviceInstanceAdminURL string, accessToken string) (string, error) {
+	bodyReader, statusCode, err := vo.authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL, accessToken)
 	if err != nil {
 		return "", err
 	}
@@ -89,12 +91,14 @@ func (so *viewOperation) Run(authenticatedClient httpclient.AuthenticatedClient,
 	return RenderView(&viewInstanceResp)
 }
 
-func (so *viewOperation) IsLifecycleOperation() bool {
+func (vo *viewOperation) IsLifecycleOperation() bool {
 	return false
 }
 
-func NewViewOperation() Operation {
-	return &viewOperation{}
+func NewViewOperation(authenticatedClient httpclient.AuthenticatedClient) Operation {
+	return &viewOperation{
+		authenticatedClient: authenticatedClient,
+	}
 }
 
 func RenderView(viewInstanceResp *ViewInstanceResp) (string, error) {
