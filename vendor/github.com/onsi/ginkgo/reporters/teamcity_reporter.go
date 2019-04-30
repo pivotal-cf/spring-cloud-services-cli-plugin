@@ -3,7 +3,7 @@
 TeamCity Reporter for Ginkgo
 
 Makes use of TeamCity's support for Service Messages
-https://confluence.jetbrains.com/display/TCD7/Build+Script+Interaction+with+TeamCity#BuildScriptInteractionwithTeamCity-ReportingTests
+http://confluence.jetbrains.com/display/TCD7/Build+Script+Interaction+with+TeamCity#BuildScriptInteractionwithTeamCity-ReportingTests
 */
 
 package reporters

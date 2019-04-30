@@ -8,11 +8,11 @@ For information on plugin development, see
 
 ## Building
 
-To build the plugin, install go and govendor (see the [Go Development](docs/go.adoc) guide for instructions) and issue:
+To build the plugin, run:
 ```bash
 $ rm $GOPATH/bin/spring-cloud-services-cli-plugin
-$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ govendor install -ldflags="-X main.pluginVersion=$(cat version)" +local
+$ cd spring-cloud-services-cli-plugin
+$ go install -ldflags="-X main.pluginVersion=$(cat version)"
 ```
 This builds the plugin with the current version number in the [version file](version).
 
@@ -58,17 +58,14 @@ This needs to be done whenever commands are added, modified, or deleted. Note th
 
 The generated docs may be viewed [here](docs/cli.md).
 
-## Go Development
-
-See the [Go Development](docs/go.adoc) guide.
-(If you just want to build and install the plugin, simply install go and govendor.)
-
 ## Testing
+
+First [install Ginkgo](https://onsi.github.io/ginkgo/).
 
 Run the tests as follows:
 ```bash
-$ cd $GOPATH/src/github.com/pivotal-cf/spring-cloud-services-cli-plugin
-$ govendor test +local
+$ cd spring-cloud-services-cli-plugin
+$ ginkgo -r
 ```
 
 ## License
