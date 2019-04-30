@@ -1,0 +1,3 @@
+scs-cf-cli-s3-bucket-name: spring-cloud-services-cli-plugin
+scs-slack-failure-channel: "#spring-cloud-services"
+scs-slack-notification-channel: "#scs-firehose"

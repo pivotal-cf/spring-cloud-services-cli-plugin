@@ -1,0 +1,23 @@
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.12
+
+inputs:
+- name: cf-cli-plugin
+- name: version
+
+outputs:
+- name: built-plugin
+
+run:
+  path: cf-cli-plugin/ci/tasks/build.sh
+
+params:
+  BUILT_PLUGIN_OUTPUT: built-plugin
+  CF_CLI_PLUGIN_INPUT: cf-cli-plugin
+  PLUGIN_NAME: spring-cloud-services-cli-plugin
+  VERSION_INPUT: version
