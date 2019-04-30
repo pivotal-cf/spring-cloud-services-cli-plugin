@@ -29,12 +29,12 @@ import (
 var _ = Describe("GetManagementEndpoint", func() {
 
 	const testAccessToken = "someaccesstoken"
+	const scs2DashboardUrl = "https://spring-cloud-broker.example.com/dashboard/p-config-server/ae019348-e113-4a84-8c8d-9b31ae3cb5ee"
+	const scs3DashboardUrl = "https://config-server-1558aa56-97a5-47cd-a73c-7d5cd0818b22.example.com/dashboard"
 
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-
-		serviceInstanceName string
 
 		isLifecycleOperation bool
 
@@ -54,20 +54,15 @@ var _ = Describe("GetManagementEndpoint", func() {
 
 		isLifecycleOperation = true
 
-		serviceInstanceName = "serviceinstance"
+		fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
 	})
 
 	JustBeforeEach(func() {
 		managementEndpointResolver := instance.NewAuthenticatedManagementEndpointResolver(fakeCliConnection, fakeAuthClient)
 		output, err = managementEndpointResolver.GetManagementEndpoint(
-			serviceInstanceName,
+			"serviceinstance",
 			testAccessToken,
 			isLifecycleOperation)
-	})
-
-	It("should get the service", func() {
-		Expect(fakeCliConnection.GetServiceCallCount()).To(Equal(1))
-		Expect(fakeCliConnection.GetServiceArgsForCall(0)).To(Equal(serviceInstanceName))
 	})
 
 	Context("when the service instance is not found", func() {
@@ -75,93 +70,71 @@ var _ = Describe("GetManagementEndpoint", func() {
 			fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{}, testError)
 		})
 
-		It("should propagate the error", func() {
+		It("propagates the error", func() {
 			Expect(err).To(MatchError("service instance not found: " + errMessage))
 		})
 	})
 
-	Context("when the service instance is found", func() {
+	Context("when an SCS 2 service instance is found", func() {
 		BeforeEach(func() {
 			fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-				DashboardUrl: "https://dasboard-url.some.host.name/x/y/guid",
+				ServiceOffering: plugin_models.GetService_ServiceFields{
+					Name: "p-config-server",
+				},
+				DashboardUrl: scs2DashboardUrl,
 				Guid:         "guid",
 			}, nil)
 		})
 
-		Context("when there is an error checking SCS version", func() {
-			Context("getting the API endpoint", func() {
-				BeforeEach(func() {
-					fakeCliConnection.ApiEndpointReturns("", errors.New("error getting API endpoint"))
-				})
-
-				It("should propagate the error", func() {
-					Expect(err).To(MatchError("error getting API endpoint"))
-				})
+		Context("when it's a lifecycle operation", func() {
+			BeforeEach(func() {
+				isLifecycleOperation = true
 			})
 
-			Context("checking the V3 broker URL", func() {
-				BeforeEach(func() {
-					fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
-					fakeAuthClient.DoAuthenticatedGetReturns(nil, 500, errors.New("error pinging V3 broker"))
-				})
-
-				It("should propagate the error", func() {
-					Expect(err).To(MatchError("error pinging V3 broker"))
-				})
+			It("returns the cli endpoint on the broker", func() {
+				Expect(output).To(Equal("https://spring-cloud-broker.example.com/cli/instances/guid"))
 			})
 		})
 
-		Context("when we are in SCS3", func() {
+		Context("when it's not a lifecycle operation", func() {
 			BeforeEach(func() {
-				fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
-				fakeAuthClient.DoAuthenticatedGetReturns(nil, 200, nil)
+				isLifecycleOperation = false
 			})
 
-			Context("when it's a lifecycle operation", func() {
-				BeforeEach(func() {
-					isLifecycleOperation = true
-				})
+			It("returns the cli endpoint on the broker", func() {
+				Expect(output).To(Equal("https://spring-cloud-broker.example.com/cli/instances/guid"))
+			})
+		})
+	})
 
-				It("should return the broker URL for SCS3", func() {
-					Expect(output).To(Equal("https://scs-service-broker.some.host.name/cli/instances/guid"))
-				})
+	Context("when an SCS3 service instance is found", func() {
+		BeforeEach(func() {
+			fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
+				ServiceOffering: plugin_models.GetService_ServiceFields{
+					Name: "p.config-server",
+				},
+				DashboardUrl: scs3DashboardUrl,
+				Guid:         "guid",
+			}, nil)
+		})
+
+		Context("when it's a lifecycle operation", func() {
+			BeforeEach(func() {
+				isLifecycleOperation = true
 			})
 
-			Context("when it's not a lifecycle operation", func() {
-				BeforeEach(func() {
-					isLifecycleOperation = false
-				})
-
-				It("should return the dashboard URL", func() {
-					Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
-				})
+			It("returns the cli endpoint on the broker", func() {
+				Expect(output).To(Equal("https://scs-service-broker.some.host.name/cli/instances/guid"))
 			})
 		})
 
-		Context("when we are in SCS2", func() {
+		Context("when it's not a lifecycle operation", func() {
 			BeforeEach(func() {
-				fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
-				fakeAuthClient.DoAuthenticatedGetReturns(nil, 404, nil)
+				isLifecycleOperation = false
 			})
 
-			Context("when it's a lifecycle operation", func() {
-				BeforeEach(func() {
-					isLifecycleOperation = true
-				})
-
-				It("should return the broker URL for SCS3", func() {
-					Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
-				})
-			})
-
-			Context("when it's not a lifecycle operation", func() {
-				BeforeEach(func() {
-					isLifecycleOperation = false
-				})
-
-				It("should return the dashboard URL", func() {
-					Expect(output).To(Equal("https://dasboard-url.some.host.name/cli/instances/guid"))
-				})
+			It("returns the cli endpoint on the backing app", func() {
+				Expect(output).To(Equal("https://config-server-1558aa56-97a5-47cd-a73c-7d5cd0818b22.example.com/cli/instances/guid"))
 			})
 		})
 	})

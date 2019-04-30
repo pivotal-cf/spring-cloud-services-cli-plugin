@@ -18,6 +18,7 @@ package instance
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
+	"code.cloudfoundry.org/cli/plugin/models"
 	"fmt"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"net/url"
@@ -40,12 +41,7 @@ func (amer *authenticatedManagementEndpointResolver) GetManagementEndpoint(servi
 		return "", fmt.Errorf("service instance not found: %s", err)
 	}
 
-	isVersion3, err := isVersion3(amer.cliConnection, amer.authClient, accessToken)
-	if err != nil {
-		return "", err
-	}
-
-	if isVersion3 && isLifecycleOperation {
+	if isVersion3(serviceModel) && isLifecycleOperation {
 		serviceBrokerV3Url, err := serviceBrokerV3Url(amer.cliConnection)
 		if err != nil {
 			return "", err
@@ -64,23 +60,8 @@ func (amer *authenticatedManagementEndpointResolver) GetManagementEndpoint(servi
 	return parsedUrl.String(), nil
 }
 
-func isVersion3(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient, accessToken string) (bool, error) {
-	serviceBrokerV3Url, err := serviceBrokerV3Url(cliConnection)
-	if err != nil {
-		return false, err
-	}
-
-	_, statusCode, err := authClient.DoAuthenticatedGet(serviceBrokerV3Url+"/actuator/info", accessToken)
-
-	if err != nil && statusCode != 404 {
-		return false, err
-	}
-
-	if statusCode == 200 {
-		return true, nil
-	}
-
-	return false, nil
+func isVersion3(serviceModel plugin_models.GetService_Model) bool {
+	return strings.HasPrefix(serviceModel.ServiceOffering.Name, "p.")
 }
 
 func serviceBrokerV3Url(cliConnection plugin.CliConnection) (string, error) {
