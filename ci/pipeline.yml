@@ -77,7 +77,7 @@ resources:
   type: s3
   source:
     bucket: {{scs-cf-cli-s3-bucket-name}}
-    regexp: spring-cloud-services-cli-plugin-linux-amd64-(.*)
+    regexp: spring-cloud-services-cli-plugin-(.*)
     access_key_id: {{scs-s3-access-key-id}}
     secret_access_key: {{scs-s3-secret-access-key}}
 
