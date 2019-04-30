@@ -1,15 +1,15 @@
-# Color [![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](https://godoc.org/github.com/fatih/color) [![Build Status](https://img.shields.io/travis/fatih/color.svg?style=flat-square)](https://travis-ci.org/fatih/color)
+# Color [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://godoc.org/github.com/fatih/color) [![Build Status](http://img.shields.io/travis/fatih/color.svg?style=flat-square)](https://travis-ci.org/fatih/color)
 
 
 
 Color lets you use colorized outputs in terms of [ANSI Escape
-Codes](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors) in Go (Golang). It
+Codes](http://en.wikipedia.org/wiki/ANSI_escape_code#Colors) in Go (Golang). It
 has support for Windows too! The API can be used in several ways, pick one that
 suits you.
 
 
 
-![Color](https://i.imgur.com/c1JI0lA.png)
+![Color](http://i.imgur.com/c1JI0lA.png)
 
 
 ## Install
