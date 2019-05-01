@@ -19,6 +19,7 @@ package eureka
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
 	"errors"
 
@@ -138,14 +139,14 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 type InstanceOperation func(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error
 
 func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer,
-	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error),
+	serviceInstanceURLResolver serviceutil.ServiceInstanceUrlResolver,
 	operate InstanceOperation) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	eureka, err := serviceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
+	eureka, err := serviceInstanceURLResolver.GetServiceInstanceUrl(srInstanceName, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}

@@ -59,21 +59,16 @@ type SummaryResp struct {
 type SummaryFailure struct {
 	Code        int
 	Description string
-	Error_code  string
+	ErrorCode   string
 }
 
-func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
-	return ListWithResolver(cliConnection, srInstanceName, authClient, serviceutil.ServiceInstanceURL)
-}
-
-func ListWithResolver(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient,
-	servinceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	eureka, err := servinceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
+	eureka, err := serviceInstanceUrlResolver.GetServiceInstanceUrl(srInstanceName, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}

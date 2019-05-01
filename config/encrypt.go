@@ -2,48 +2,56 @@ package config
 
 import (
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 	"io/ioutil"
+	"net/http"
 
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-var DefaultResolver = serviceutil.ServiceInstanceURL
-
-func Encrypt(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, fileToEncrypt string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
-	textToEncrypt := plainText
-	var err error
-
-	if fileToEncrypt != "" {
-		textToEncrypt, err = ReadFileContents(fileToEncrypt)
-		if err != nil {
-			return "", err
-		}
-	}
-	return EncryptWithResolver(cliConnection, configServerInstanceName, textToEncrypt, authenticatedClient, DefaultResolver)
+type Encrypter interface {
+	EncryptString(configServerInstanceName string, plainText string) (string, error)
+	EncryptFile(configServerInstanceName string, fileToEncrypt string) (string, error)
 }
 
-func EncryptWithResolver(cliConnection plugin.CliConnection, configServerInstanceName string, plainText string, authenticatedClient httpclient.AuthenticatedClient,
-	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+type encrypter struct {
+	cliConnection              plugin.CliConnection
+	authenticatedClient        httpclient.AuthenticatedClient
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver
+}
 
-	accessToken, err := cfutil.GetToken(cliConnection)
+func NewEncrypter(cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) Encrypter {
+	return &encrypter{
+		cliConnection:              cliConnection,
+		authenticatedClient:        authenticatedClient,
+		serviceInstanceUrlResolver: serviceInstanceUrlResolver,
+	}
+}
+
+func (e *encrypter) EncryptFile(configServerInstanceName string, fileToEncrypt string) (string, error) {
+	textToEncrypt, err := ReadFileContents(fileToEncrypt)
 	if err != nil {
 		return "", err
 	}
 
-	configServer, err := serviceInstanceURL(cliConnection, configServerInstanceName, accessToken, authenticatedClient)
+	return e.EncryptString(configServerInstanceName, textToEncrypt)
+}
+
+func (e *encrypter) EncryptString(configServerInstanceName string, textToEncrypt string) (string, error) {
+	accessToken, err := cfutil.GetToken(e.cliConnection)
+	if err != nil {
+		return "", err
+	}
+
+	configServerUrl, err := e.serviceInstanceUrlResolver.GetServiceInstanceUrl(configServerInstanceName, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining config server URL: %s", err)
 	}
 
-	return encrypt(plainText, configServer, accessToken, authenticatedClient)
-}
-
-func encrypt(plainText string, serviceURI string, accessToken string, authenticatedClient httpclient.AuthenticatedClient) (string, error) {
 	var bodyHoldsErrorDetails = false
-	bodyReader, _, err := authenticatedClient.DoAuthenticatedPost(serviceURI+"encrypt", "text/plain", plainText, accessToken) // No pun intended between "text/plain" and plainText
+	bodyReader, statusCode, err := e.authenticatedClient.DoAuthenticatedPost(configServerUrl+"encrypt", "text/plain", textToEncrypt, accessToken)
 	if err != nil {
 		if bodyReader == nil {
 			return "", err
@@ -57,8 +65,12 @@ func encrypt(plainText string, serviceURI string, accessToken string, authentica
 		return "", fmt.Errorf("Failed to read encrypted value: %s", err)
 	}
 
-	if bodyHoldsErrorDetails {
-		return "", fmt.Errorf("Encryption failed: %v", string(body))
+	if bodyHoldsErrorDetails || statusCode != http.StatusOK {
+		errorDetails := ""
+		if len(body) > 0 {
+			errorDetails = fmt.Sprintf(": %s", string(body))
+		}
+		return "", fmt.Errorf("Encryption failed or is not supported by this config server%s", errorDetails)
 	}
 
 	return string(body), nil

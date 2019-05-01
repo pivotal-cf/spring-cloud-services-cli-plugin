@@ -50,7 +50,7 @@ func (po *parametersOperation) Run(serviceInstanceAdminURL string, accessToken s
 	return string(body), nil
 }
 
-func (so *parametersOperation) IsServiceBrokerEndpoint() bool {
+func (*parametersOperation) IsServiceBrokerOperation() bool {
 	return false
 }
 

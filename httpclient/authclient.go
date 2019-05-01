@@ -23,7 +23,7 @@ import (
 	"strings"
 )
 
-//go:generate counterfeiter -o httpclientfakes/fake_authenticated_client.go . AuthenticatedClient
+//go:generate counterfeiter . AuthenticatedClient
 type AuthenticatedClient interface {
 	DoAuthenticatedGet(url string, accessToken string) (io.ReadCloser, int, error)
 

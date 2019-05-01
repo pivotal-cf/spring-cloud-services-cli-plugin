@@ -41,18 +41,13 @@ type InfoResp struct {
 	Peers     []Peer
 }
 
-func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient) (string, error) {
-	return InfoWithResolver(cliConnection, client, srInstanceName, authClient, serviceutil.ServiceInstanceURL)
-}
-
-func InfoWithResolver(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, authClient httpclient.AuthenticatedClient,
-	serviceInstanceURL func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)) (string, error) {
+func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err
 	}
 
-	eureka, err := serviceInstanceURL(cliConnection, srInstanceName, accessToken, authClient)
+	eureka, err := serviceInstanceUrlResolver.GetServiceInstanceUrl(srInstanceName, accessToken)
 	if err != nil {
 		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}

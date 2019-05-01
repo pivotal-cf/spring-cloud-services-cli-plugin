@@ -19,12 +19,13 @@ package instance
 import (
 	"code.cloudfoundry.org/cli/plugin"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
-//go:generate counterfeiter -o operationfakes/fake_operation.go . Operation
+//go:generate counterfeiter . Operation
 type Operation interface {
 	Run(serviceInstanceAdminURL string, accessToken string) (string, error)
-	IsServiceBrokerEndpoint() bool
+	IsServiceBrokerOperation() bool
 }
 
 type OperationRunner interface {
@@ -33,7 +34,17 @@ type OperationRunner interface {
 
 type authenticatedOperationRunner struct {
 	cliConnection              plugin.CliConnection
-	managementEndpointResolver ManagementEndpointResolver
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver
+}
+
+func NewAuthenticatedOperationRunner(
+	cliConnection plugin.CliConnection,
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) OperationRunner {
+
+	return &authenticatedOperationRunner{
+		cliConnection:              cliConnection,
+		serviceInstanceUrlResolver: serviceInstanceUrlResolver,
+	}
 }
 
 func (aor *authenticatedOperationRunner) RunOperation(
@@ -45,24 +56,14 @@ func (aor *authenticatedOperationRunner) RunOperation(
 		return "", err
 	}
 
-	serviceInstanceAdminURL, err := aor.managementEndpointResolver.GetManagementEndpoint(
+	serviceInstanceAdminURL, err := aor.serviceInstanceUrlResolver.GetManagementUrl(
 		serviceInstanceName,
 		accessToken,
-		operation.IsServiceBrokerEndpoint())
+		operation.IsServiceBrokerOperation())
 
 	if err != nil {
 		return "", err
 	}
 
 	return operation.Run(serviceInstanceAdminURL, accessToken)
-}
-
-func NewAuthenticatedOperationRunner(
-	cliConnection plugin.CliConnection,
-	managementEndpointResolver ManagementEndpointResolver) OperationRunner {
-
-	return &authenticatedOperationRunner{
-		cliConnection:              cliConnection,
-		managementEndpointResolver: managementEndpointResolver,
-	}
 }

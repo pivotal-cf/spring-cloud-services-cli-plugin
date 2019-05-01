@@ -31,7 +31,7 @@ func (so *startOperation) Run(serviceInstanceAdminURL string, accessToken string
 	return "", err
 }
 
-func (so *startOperation) IsServiceBrokerEndpoint() bool {
+func (so *startOperation) IsServiceBrokerOperation() bool {
 	return true
 }
 
