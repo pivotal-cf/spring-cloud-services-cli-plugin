@@ -61,7 +61,7 @@ type BackingAppInstance struct {
 	Details     string
 }
 
-type viewOperation struct{
+type viewOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
@@ -92,7 +92,7 @@ func (vo *viewOperation) Run(serviceInstanceAdminURL string, accessToken string)
 }
 
 func (vo *viewOperation) IsLifecycleOperation() bool {
-	return false
+	return true
 }
 
 func NewViewOperation(authenticatedClient httpclient.AuthenticatedClient) Operation {
