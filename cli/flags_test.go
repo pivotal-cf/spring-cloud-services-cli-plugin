@@ -25,9 +25,9 @@ import (
 var _ = Describe("Flags", func() {
 
 	var (
-		args           = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "-i", "1", "-i", "2", "-i", "3"}
-		instanceIdx    *int
-		err            error
+		args        = []string{"cf", "srd", "provision-service-registry", "provision-sr-1", "-i", "1", "-i", "2", "-i", "3"}
+		instanceIdx *int
+		err         error
 	)
 
 	JustBeforeEach(func() {

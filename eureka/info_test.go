@@ -18,44 +18,42 @@ package eureka_test
 
 import (
 	"errors"
+	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil/serviceutilfakes"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
-	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/eureka"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
 var _ = Describe("Service Registry Info", func() {
-	const testAccessToken = "someaccesstoken"
+	const (
+		testAccessToken         = "someaccesstoken"
+		testServiceInstanceName = "some-service-registry"
+	)
 
 	var (
-		fakeCliConnection   *pluginfakes.FakeCliConnection
-		fakeClient          *httpclientfakes.FakeClient
-		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		resolverAccessToken string
-		output              string
-		err                 error
+		fakeCliConnection *pluginfakes.FakeCliConnection
+		fakeClient        *httpclientfakes.FakeClient
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		output            string
+		err               error
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeClient = &httpclientfakes.FakeClient{}
-		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-			resolverAccessToken = accessToken
-			return "https://eureka-dashboard-url/", nil
-		}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeResolver.GetServiceInstanceUrlReturns("https://eureka-dashboard-url/", nil)
 	})
 
 	JustBeforeEach(func() {
-		output, err = eureka.InfoWithResolver(fakeCliConnection, fakeClient, "some-service-registry", fakeAuthClient, fakeResolver)
+		output, err = eureka.Info(fakeCliConnection, fakeClient, testServiceInstanceName, fakeResolver)
 	})
 
 	Context("when the access token is not available", func() {
@@ -77,9 +75,7 @@ var _ = Describe("Service Registry Info", func() {
 
 		Context("but the eureka URL cannot be resolved", func() {
 			BeforeEach(func() {
-				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-					return "", errors.New("resolution error")
-				}
+				fakeResolver.GetServiceInstanceUrlReturns("", errors.New("resolution error"))
 			})
 
 			It("should return a suitable error", func() {
@@ -137,8 +133,11 @@ var _ = Describe("Service Registry Info", func() {
 						Expect(fakeCliConnection.AccessTokenCallCount()).To(Equal(1))
 					})
 
-					It("should have passed the access token to the resolver", func() {
-						Expect(resolverAccessToken).To(Equal(testAccessToken))
+					It("should have resolved the url", func() {
+						Expect(fakeResolver.GetServiceInstanceUrlCallCount()).To(Equal(1))
+						serviceInstanceName, accessToken := fakeResolver.GetServiceInstanceUrlArgsForCall(0)
+						Expect(serviceInstanceName).To(Equal(testServiceInstanceName))
+						Expect(accessToken).To(Equal(testAccessToken))
 					})
 
 					It("should have sent a request to the correct URL", func() {
@@ -158,7 +157,7 @@ var _ = Describe("Service Registry Info", func() {
 					})
 
 					It("should return the service instance name", func() {
-						Expect(output).To(ContainSubstring("Service instance: some-service-registry\n"))
+						Expect(output).To(ContainSubstring(fmt.Sprintf("Service instance: %s\n", testServiceInstanceName)))
 					})
 
 					It("should return the eureka server URL", func() {

@@ -20,10 +20,10 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil/serviceutilfakes"
 	"io/ioutil"
 	"net/http"
 
-	"code.cloudfoundry.org/cli/plugin"
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"github.com/fatih/color"
@@ -37,7 +37,10 @@ import (
 
 var _ = Describe("OperateOnApplication", func() {
 
-	const testAccessToken = "someaccesstoken"
+	const (
+		testAccessToken         = "someaccesstoken"
+		testServiceInstanceName = "some-service-registry"
+	)
 
 	type operationArg struct {
 		accessToken   string
@@ -47,12 +50,11 @@ var _ = Describe("OperateOnApplication", func() {
 	}
 
 	var (
-		fakeCliConnection   *pluginfakes.FakeCliConnection
-		fakeAuthClient      *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver        func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error)
-		resolverAccessToken string
-		progressWriter      *bytes.Buffer
-		output              string
+		fakeCliConnection *pluginfakes.FakeCliConnection
+		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		progressWriter    *bytes.Buffer
+		output            string
 
 		fakeOperation      eureka.InstanceOperation
 		operationCallCount int
@@ -69,11 +71,10 @@ var _ = Describe("OperateOnApplication", func() {
 
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+
 		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
-		resolverAccessToken = ""
-		fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-			return "https://eureka-dashboard-url/", nil
-		}
+		fakeResolver.GetServiceInstanceUrlReturns("https://eureka-dashboard-url/", nil)
 		progressWriter = new(bytes.Buffer)
 
 		operationCallCount = 0
@@ -92,7 +93,7 @@ var _ = Describe("OperateOnApplication", func() {
 	})
 
 	JustBeforeEach(func() {
-		output, err = eureka.OperateOnApplication(fakeCliConnection, "some-service-registry", "some-cf-app", fakeAuthClient, instanceIndex, progressWriter, fakeResolver, fakeOperation)
+		output, err = eureka.OperateOnApplication(fakeCliConnection, testServiceInstanceName, "some-cf-app", fakeAuthClient, instanceIndex, progressWriter, fakeResolver, fakeOperation)
 	})
 
 	It("should attempt to obtain an access token", func() {
@@ -117,9 +118,7 @@ var _ = Describe("OperateOnApplication", func() {
 
 		Context("but the eureka URL cannot be resolved", func() {
 			BeforeEach(func() {
-				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-					return "", errors.New("resolution error")
-				}
+				fakeResolver.GetServiceInstanceUrlReturns("", errors.New("resolution error"))
 			})
 
 			It("should return a suitable error", func() {
@@ -133,10 +132,7 @@ var _ = Describe("OperateOnApplication", func() {
 
 			BeforeEach(func() {
 				testErr = errors.New("failed")
-				fakeResolver = func(cliConnection plugin.CliConnection, serviceInstanceName string, accessToken string, authClient httpclient.AuthenticatedClient) (string, error) {
-					resolverAccessToken = accessToken
-					return "https://spring-cloud-broker.some.host.name/x/y/z/some-guid/", nil
-				}
+				fakeResolver.GetServiceInstanceUrlReturns("https://spring-cloud-broker.some.host.name/x/y/z/some-guid/", nil)
 
 				fakeCliConnection.GetAppsStub = func() ([]plugin_models.GetAppsModel, error) {
 					apps := []plugin_models.GetAppsModel{}
@@ -171,8 +167,11 @@ var _ = Describe("OperateOnApplication", func() {
 
 			})
 
-			It("should pass the access token to the resolver", func() {
-				Expect(resolverAccessToken).To(Equal(testAccessToken))
+			It("should resolve the service instance url", func() {
+				Expect(fakeResolver.GetServiceInstanceUrlCallCount()).To(Equal(1))
+				serviceInstanceName, accessToken := fakeResolver.GetServiceInstanceUrlArgsForCall(0)
+				Expect(serviceInstanceName).To(Equal(testServiceInstanceName))
+				Expect(accessToken).To(Equal(testAccessToken))
 			})
 
 			It("should pass the access token to the GET request", func() {

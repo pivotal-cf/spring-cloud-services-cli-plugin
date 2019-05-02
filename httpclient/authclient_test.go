@@ -274,7 +274,7 @@ var _ = Describe("Authclient", func() {
 			})
 
 			Context("when the bad status response contains a body", func() {
-				var detailsBody  = ioutil.NopCloser(strings.NewReader("{details}"))
+				var detailsBody = ioutil.NopCloser(strings.NewReader("{details}"))
 
 				BeforeEach(func() {
 					resp := &http.Response{StatusCode: http.StatusNotFound, Status: "404 Not found"}
