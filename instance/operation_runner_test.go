@@ -51,7 +51,7 @@ var _ = Describe("OperationRunner", func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeOperation = &operationfakes.FakeOperation{}
 
-		fakeOperation.IsLifecycleOperationReturns(true)
+		fakeOperation.IsServiceBrokerEndpointReturns(true)
 
 		fakeManagementEndpointResolver = &resolverfakes.FakeManagementEndpointResolver{}
 

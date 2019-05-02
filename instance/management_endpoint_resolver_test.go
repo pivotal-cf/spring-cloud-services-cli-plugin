@@ -36,7 +36,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
 
-		isLifecycleOperation bool
+		isServiceBrokerEndpoint bool
 
 		errMessage string
 		testError  error
@@ -52,7 +52,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 		errMessage = "failure is not an option"
 		testError = errors.New(errMessage)
 
-		isLifecycleOperation = true
+		isServiceBrokerEndpoint = true
 
 		fakeCliConnection.ApiEndpointReturns("https://api.some.host.name", nil)
 	})
@@ -62,7 +62,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 		output, err = managementEndpointResolver.GetManagementEndpoint(
 			"serviceinstance",
 			testAccessToken,
-			isLifecycleOperation)
+			isServiceBrokerEndpoint)
 	})
 
 	Context("when the service instance is not found", func() {
@@ -88,7 +88,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 
 		Context("when it's a lifecycle operation", func() {
 			BeforeEach(func() {
-				isLifecycleOperation = true
+				isServiceBrokerEndpoint = true
 			})
 
 			It("returns the cli endpoint on the broker", func() {
@@ -98,7 +98,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 
 		Context("when it's not a lifecycle operation", func() {
 			BeforeEach(func() {
-				isLifecycleOperation = false
+				isServiceBrokerEndpoint = false
 			})
 
 			It("returns the cli endpoint on the broker", func() {
@@ -120,7 +120,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 
 		Context("when it's a lifecycle operation", func() {
 			BeforeEach(func() {
-				isLifecycleOperation = true
+				isServiceBrokerEndpoint = true
 			})
 
 			It("returns the cli endpoint on the broker", func() {
@@ -130,7 +130,7 @@ var _ = Describe("GetManagementEndpoint", func() {
 
 		Context("when it's not a lifecycle operation", func() {
 			BeforeEach(func() {
-				isLifecycleOperation = false
+				isServiceBrokerEndpoint = false
 			})
 
 			It("returns the cli endpoint on the backing app", func() {

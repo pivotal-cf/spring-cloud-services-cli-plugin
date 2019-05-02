@@ -24,7 +24,7 @@ import (
 	"net/http"
 )
 
-type parametersOperation struct{
+type parametersOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
@@ -50,7 +50,7 @@ func (po *parametersOperation) Run(serviceInstanceAdminURL string, accessToken s
 	return string(body), nil
 }
 
-func (so *parametersOperation) IsLifecycleOperation() bool {
+func (so *parametersOperation) IsServiceBrokerEndpoint() bool {
 	return false
 }
 
