@@ -91,7 +91,7 @@ func (vo *viewOperation) Run(serviceInstanceAdminURL string, accessToken string)
 	return RenderView(&viewInstanceResp)
 }
 
-func (vo *viewOperation) IsLifecycleOperation() bool {
+func (vo *viewOperation) IsServiceBrokerEndpoint() bool {
 	return true
 }
 

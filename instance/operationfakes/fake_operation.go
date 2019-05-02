@@ -8,14 +8,14 @@ import (
 )
 
 type FakeOperation struct {
-	IsLifecycleOperationStub        func() bool
-	isLifecycleOperationMutex       sync.RWMutex
-	isLifecycleOperationArgsForCall []struct {
+	IsServiceBrokerEndpointStub        func() bool
+	isServiceBrokerEndpointMutex       sync.RWMutex
+	isServiceBrokerEndpointArgsForCall []struct {
 	}
-	isLifecycleOperationReturns struct {
+	isServiceBrokerEndpointReturns struct {
 		result1 bool
 	}
-	isLifecycleOperationReturnsOnCall map[int]struct {
+	isServiceBrokerEndpointReturnsOnCall map[int]struct {
 		result1 bool
 	}
 	RunStub        func(string, string) (string, error)
@@ -36,54 +36,54 @@ type FakeOperation struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeOperation) IsLifecycleOperation() bool {
-	fake.isLifecycleOperationMutex.Lock()
-	ret, specificReturn := fake.isLifecycleOperationReturnsOnCall[len(fake.isLifecycleOperationArgsForCall)]
-	fake.isLifecycleOperationArgsForCall = append(fake.isLifecycleOperationArgsForCall, struct {
+func (fake *FakeOperation) IsServiceBrokerEndpoint() bool {
+	fake.isServiceBrokerEndpointMutex.Lock()
+	ret, specificReturn := fake.isServiceBrokerEndpointReturnsOnCall[len(fake.isServiceBrokerEndpointArgsForCall)]
+	fake.isServiceBrokerEndpointArgsForCall = append(fake.isServiceBrokerEndpointArgsForCall, struct {
 	}{})
-	fake.recordInvocation("IsLifecycleOperation", []interface{}{})
-	fake.isLifecycleOperationMutex.Unlock()
-	if fake.IsLifecycleOperationStub != nil {
-		return fake.IsLifecycleOperationStub()
+	fake.recordInvocation("IsServiceBrokerEndpoint", []interface{}{})
+	fake.isServiceBrokerEndpointMutex.Unlock()
+	if fake.IsServiceBrokerEndpointStub != nil {
+		return fake.IsServiceBrokerEndpointStub()
 	}
 	if specificReturn {
 		return ret.result1
 	}
-	fakeReturns := fake.isLifecycleOperationReturns
+	fakeReturns := fake.isServiceBrokerEndpointReturns
 	return fakeReturns.result1
 }
 
-func (fake *FakeOperation) IsLifecycleOperationCallCount() int {
-	fake.isLifecycleOperationMutex.RLock()
-	defer fake.isLifecycleOperationMutex.RUnlock()
-	return len(fake.isLifecycleOperationArgsForCall)
+func (fake *FakeOperation) IsServiceBrokerEndpointCallCount() int {
+	fake.isServiceBrokerEndpointMutex.RLock()
+	defer fake.isServiceBrokerEndpointMutex.RUnlock()
+	return len(fake.isServiceBrokerEndpointArgsForCall)
 }
 
-func (fake *FakeOperation) IsLifecycleOperationCalls(stub func() bool) {
-	fake.isLifecycleOperationMutex.Lock()
-	defer fake.isLifecycleOperationMutex.Unlock()
-	fake.IsLifecycleOperationStub = stub
+func (fake *FakeOperation) IsServiceBrokerEndpointCalls(stub func() bool) {
+	fake.isServiceBrokerEndpointMutex.Lock()
+	defer fake.isServiceBrokerEndpointMutex.Unlock()
+	fake.IsServiceBrokerEndpointStub = stub
 }
 
-func (fake *FakeOperation) IsLifecycleOperationReturns(result1 bool) {
-	fake.isLifecycleOperationMutex.Lock()
-	defer fake.isLifecycleOperationMutex.Unlock()
-	fake.IsLifecycleOperationStub = nil
-	fake.isLifecycleOperationReturns = struct {
+func (fake *FakeOperation) IsServiceBrokerEndpointReturns(result1 bool) {
+	fake.isServiceBrokerEndpointMutex.Lock()
+	defer fake.isServiceBrokerEndpointMutex.Unlock()
+	fake.IsServiceBrokerEndpointStub = nil
+	fake.isServiceBrokerEndpointReturns = struct {
 		result1 bool
 	}{result1}
 }
 
-func (fake *FakeOperation) IsLifecycleOperationReturnsOnCall(i int, result1 bool) {
-	fake.isLifecycleOperationMutex.Lock()
-	defer fake.isLifecycleOperationMutex.Unlock()
-	fake.IsLifecycleOperationStub = nil
-	if fake.isLifecycleOperationReturnsOnCall == nil {
-		fake.isLifecycleOperationReturnsOnCall = make(map[int]struct {
+func (fake *FakeOperation) IsServiceBrokerEndpointReturnsOnCall(i int, result1 bool) {
+	fake.isServiceBrokerEndpointMutex.Lock()
+	defer fake.isServiceBrokerEndpointMutex.Unlock()
+	fake.IsServiceBrokerEndpointStub = nil
+	if fake.isServiceBrokerEndpointReturnsOnCall == nil {
+		fake.isServiceBrokerEndpointReturnsOnCall = make(map[int]struct {
 			result1 bool
 		})
 	}
-	fake.isLifecycleOperationReturnsOnCall[i] = struct {
+	fake.isServiceBrokerEndpointReturnsOnCall[i] = struct {
 		result1 bool
 	}{result1}
 }
@@ -155,8 +155,8 @@ func (fake *FakeOperation) RunReturnsOnCall(i int, result1 string, result2 error
 func (fake *FakeOperation) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.isLifecycleOperationMutex.RLock()
-	defer fake.isLifecycleOperationMutex.RUnlock()
+	fake.isServiceBrokerEndpointMutex.RLock()
+	defer fake.isServiceBrokerEndpointMutex.RUnlock()
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}

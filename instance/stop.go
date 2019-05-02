@@ -22,7 +22,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
-type stopOperation struct{
+type stopOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
@@ -31,7 +31,7 @@ func (so *stopOperation) Run(serviceInstanceAdminURL string, accessToken string)
 	return "", err
 }
 
-func (so *stopOperation) IsLifecycleOperation() bool {
+func (so *stopOperation) IsServiceBrokerEndpoint() bool {
 	return true
 }
 

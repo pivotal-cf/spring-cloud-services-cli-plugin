@@ -24,7 +24,7 @@ import (
 //go:generate counterfeiter -o operationfakes/fake_operation.go . Operation
 type Operation interface {
 	Run(serviceInstanceAdminURL string, accessToken string) (string, error)
-	IsLifecycleOperation() bool
+	IsServiceBrokerEndpoint() bool
 }
 
 type OperationRunner interface {
@@ -48,7 +48,7 @@ func (aor *authenticatedOperationRunner) RunOperation(
 	serviceInstanceAdminURL, err := aor.managementEndpointResolver.GetManagementEndpoint(
 		serviceInstanceName,
 		accessToken,
-		operation.IsLifecycleOperation())
+		operation.IsServiceBrokerEndpoint())
 
 	if err != nil {
 		return "", err

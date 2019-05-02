@@ -27,7 +27,7 @@ import (
 
 //go:generate counterfeiter -o resolverfakes/fake_management_endpoint_resolver.go . ManagementEndpointResolver
 type ManagementEndpointResolver interface {
-	GetManagementEndpoint(serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error)
+	GetManagementEndpoint(serviceInstanceName string, accessToken string, isServiceBrokerEndpoint bool) (string, error)
 }
 
 type authenticatedManagementEndpointResolver struct {
@@ -35,13 +35,13 @@ type authenticatedManagementEndpointResolver struct {
 	authClient    httpclient.AuthenticatedClient
 }
 
-func (amer *authenticatedManagementEndpointResolver) GetManagementEndpoint(serviceInstanceName string, accessToken string, isLifecycleOperation bool) (string, error) {
+func (amer *authenticatedManagementEndpointResolver) GetManagementEndpoint(serviceInstanceName string, accessToken string, isServiceBrokerEndpoint bool) (string, error) {
 	serviceModel, err := amer.cliConnection.GetService(serviceInstanceName)
 	if err != nil {
 		return "", fmt.Errorf("service instance not found: %s", err)
 	}
 
-	if isVersion3(serviceModel) && isLifecycleOperation {
+	if isVersion3(serviceModel) && isServiceBrokerEndpoint {
 		serviceBrokerV3Url, err := serviceBrokerV3Url(amer.cliConnection)
 		if err != nil {
 			return "", err
