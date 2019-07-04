@@ -95,6 +95,14 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			}
 		})
 
+	case "config-server-refresh":
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+
+		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
+			refresher := config.NewRefresher(cliConnection, authClient, serviceInstanceUrlResolver)
+			return "Successfully refreshed mirrors", refresher.Refresh(configServerInstanceName)
+		})
+
 	case "spring-cloud-service-stop":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
@@ -238,6 +246,14 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 
       NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.`,
 					Options: map[string]string{"-f/--file-to-encrypt": cli.FileNameUsage},
+				},
+			},
+			{
+				Name:     "config-server-refresh",
+				HelpText: "Refresh Git mirrors associated with given Spring Cloud Services configuration server",
+				Alias:    "csr",
+				UsageDetails: plugin.Usage{
+					Usage: `   cf config-server-refresh CONFIG_SERVER_INSTANCE_NAME`,
 				},
 			},
 			{
