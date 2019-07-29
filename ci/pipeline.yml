@@ -4,7 +4,7 @@ slack-success-notification: &slack-success-notification
   params:
     icon_emoji: ":concourse:"
     username: concourse
-    channel: {{scs-slack-notification-channel}}
+    channel: ((scs-slack-notification-channel))
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has succeeded with build <https://scs.ci.springapps.io/builds/$BUILD_ID|$BUILD_NAME>!"
 
 slack-failure-notification: &slack-failure-notification
@@ -12,7 +12,7 @@ slack-failure-notification: &slack-failure-notification
   params:
     icon_emoji: ":animal:"
     username: concourse
-    channel: {{scs-slack-failure-channel}}
+    channel: ((scs-slack-failure-channel))
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has failed with build <https://scs.ci.springapps.io/builds/$BUILD_ID|$BUILD_NAME>!"
 
 jobs:
@@ -60,7 +60,7 @@ resources:
 - name: cf-cli-plugin
   type: git
   source:
-    uri: {{github-url-cf-cli-plugin}}
+    uri: ((github-url-cf-cli-plugin))
     branch: master
     ignore_paths: [version]
 
@@ -68,7 +68,7 @@ resources:
   type: semver
   source:
     driver: git
-    uri: {{github-url-cf-cli-plugin}}
+    uri: ((github-url-cf-cli-plugin))
     branch: master
     file: version
     initial_version: 0.0.0
@@ -76,13 +76,13 @@ resources:
 - name: cf-cli-plugin-storage
   type: s3
   source:
-    bucket: {{scs-cf-cli-s3-bucket-name}}
+    bucket: ((scs-cf-cli-s3-bucket-name))
     regexp: spring-cloud-services-cli-plugin-(.*)
-    access_key_id: {{scs-s3-access-key-id}}
-    secret_access_key: {{scs-s3-secret-access-key}}
+    access_key_id: ((scs-s3-access-key-id))
+    secret_access_key: ((scs-s3-secret-access-key))
 
 - name: alert
   type: slack-notification
   source:
     # Default channel is #scs-firehose
-    url: {{scs-slack-webhook}}
+    url: ((scs-slack-webhook))
