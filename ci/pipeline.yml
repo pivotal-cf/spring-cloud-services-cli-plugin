@@ -19,7 +19,7 @@ jobs:
 - name: build-plugin
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: cf-cli-plugin
       trigger: true
     - get: version
@@ -28,7 +28,7 @@ jobs:
   - task: build-plugin
     file: cf-cli-plugin/ci/tasks/build.yml
     on_success:
-      aggregate:
+      in_parallel:
       - put: cf-cli-plugin-storage
         params:
           file: built-plugin/spring-cloud-services-cli-plugin-darwin-amd64-*
