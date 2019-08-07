@@ -62,7 +62,7 @@ type SummaryFailure struct {
 	ErrorCode   string
 }
 
-func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) (string, error) {
+func List(cliConnection plugin.CliConnection, srInstanceName string, authClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err

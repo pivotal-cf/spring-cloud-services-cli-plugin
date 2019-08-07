@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 	"io/ioutil"
 	"net/http"
 
@@ -65,8 +66,8 @@ type viewOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
-func (vo *viewOperation) Run(serviceInstanceAdminURL string, accessToken string) (string, error) {
-	bodyReader, statusCode, err := vo.authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL, accessToken)
+func (vo *viewOperation) Run(serviceInstanceManagementParameters serviceutil.ManagementParameters, accessToken string) (string, error) {
+	bodyReader, statusCode, err := vo.authenticatedClient.DoAuthenticatedGet(serviceInstanceManagementParameters.Url, accessToken)
 	if err != nil {
 		return "", err
 	}

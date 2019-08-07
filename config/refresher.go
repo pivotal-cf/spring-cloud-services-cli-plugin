@@ -16,7 +16,7 @@ type Refresher interface {
 type refresher struct {
 	cliConnection              plugin.CliConnection
 	authenticatedClient        httpclient.AuthenticatedClient
-	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver
 }
 
 func (r *refresher) Refresh(configServerInstanceName string) error {
@@ -42,7 +42,7 @@ func (r *refresher) Refresh(configServerInstanceName string) error {
 	return nil
 }
 
-func NewRefresher(connection plugin.CliConnection, client httpclient.AuthenticatedClient, resolver serviceutil.ServiceInstanceUrlResolver) Refresher {
+func NewRefresher(connection plugin.CliConnection, client httpclient.AuthenticatedClient, resolver serviceutil.ServiceInstanceResolver) Refresher {
 	return &refresher{
 		cliConnection:              connection,
 		authenticatedClient:        client,

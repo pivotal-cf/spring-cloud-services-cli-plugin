@@ -17,7 +17,9 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
@@ -26,8 +28,13 @@ type restageOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
-func (ro *restageOperation) Run(serviceInstanceAdminURL string, accessToken string) (string, error) {
-	_, err := ro.authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?restage=", serviceInstanceAdminURL), accessToken)
+func (ro *restageOperation) Run(serviceInstanceManagementParameters serviceutil.ManagementParameters, accessToken string) (string, error) {
+	jsonBytes, err := json.Marshal(serviceInstanceManagementParameters)
+	if err != nil {
+		return "", err
+	}
+	body := string(jsonBytes)
+	_, err = ro.authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?restage=", serviceInstanceManagementParameters.Url), "application/json", body, accessToken)
 	return "", err
 }
 

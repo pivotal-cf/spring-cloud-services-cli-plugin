@@ -24,6 +24,11 @@ import (
 
 func Disable(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error {
 	// Override the registration status to be OUT_OF_SERVICE.
-	_, err := authClient.DoAuthenticatedPut(fmt.Sprintf("%seureka/apps/%s/%s/status?value=OUT_OF_SERVICE", eurekaUrl, eurekaAppName, instanceId), accessToken)
+	_, err := authClient.DoAuthenticatedPut(
+		fmt.Sprintf("%seureka/apps/%s/%s/status?value=OUT_OF_SERVICE", eurekaUrl, eurekaAppName, instanceId),
+		"",
+		"",
+		accessToken,
+	)
 	return err
 }

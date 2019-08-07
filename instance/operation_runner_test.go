@@ -23,6 +23,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/instancefakes"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil/serviceutilfakes"
 )
 
@@ -37,7 +38,7 @@ var _ = Describe("OperationRunner", func() {
 		fakeOperation     *instancefakes.FakeOperation
 		output            string
 
-		fakeServiceInstanceUrlResolver *serviceutilfakes.FakeServiceInstanceUrlResolver
+		fakeServiceInstanceResolver *serviceutilfakes.FakeServiceInstanceResolver
 
 		errMessage string
 		testError  error
@@ -53,9 +54,11 @@ var _ = Describe("OperationRunner", func() {
 
 		fakeOperation.IsServiceBrokerOperationReturns(true)
 
-		fakeServiceInstanceUrlResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeServiceInstanceResolver = &serviceutilfakes.FakeServiceInstanceResolver{}
 
-		fakeServiceInstanceUrlResolver.GetManagementUrlReturns("https://spring-cloud-broker.some.host.name/cli/instances/guid", nil)
+		fakeServiceInstanceResolver.GetManagementParametersReturns(serviceutil.ManagementParameters{
+			Url: "https://spring-cloud-broker.some.host.name/cli/instances/guid",
+		}, nil)
 
 		errMessage = "failure is not an option"
 		testError = errors.New(errMessage)
@@ -64,7 +67,7 @@ var _ = Describe("OperationRunner", func() {
 	})
 
 	JustBeforeEach(func() {
-		operationRunner = instance.NewAuthenticatedOperationRunner(fakeCliConnection, fakeServiceInstanceUrlResolver)
+		operationRunner = instance.NewAuthenticatedOperationRunner(fakeCliConnection, fakeServiceInstanceResolver)
 		output, err = operationRunner.RunOperation(
 			serviceInstanceName,
 			fakeOperation)
@@ -90,23 +93,26 @@ var _ = Describe("OperationRunner", func() {
 			fakeCliConnection.AccessTokenReturns("bearer "+testAccessToken, nil)
 		})
 
-		Context("when the admin URL is not retrieved correctly", func() {
+		Context("when the admin parameters are not retrieved correctly", func() {
 			BeforeEach(func() {
-				fakeServiceInstanceUrlResolver.GetManagementUrlReturns("", errors.New("some error retrieving the admin URL"))
+				fakeServiceInstanceResolver.GetManagementParametersReturns(serviceutil.ManagementParameters{}, errors.New("some error retrieving the admin parameters"))
 			})
 
 			It("should return a suitable error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("some error retrieving the admin URL"))
+				Expect(err).To(MatchError("some error retrieving the admin parameters"))
 			})
 		})
 
-		Context("when the admin URL is retrieved correctly", func() {
+		Context("when the admin parameters are retrieved correctly", func() {
 			It("invoke the operation with the correct parameters", func() {
 				Expect(fakeOperation.RunCallCount()).To(Equal(1))
-				serviceInstanceAdminURL, accessToken := fakeOperation.RunArgsForCall(0)
+				serviceInstanceAdminParameters, accessToken := fakeOperation.RunArgsForCall(0)
 
-				Expect(serviceInstanceAdminURL).To(Equal("https://spring-cloud-broker.some.host.name/cli/instances/guid"))
+				Expect(serviceInstanceAdminParameters).To(Equal(
+					serviceutil.ManagementParameters{
+						Url: "https://spring-cloud-broker.some.host.name/cli/instances/guid",
+					}))
 				Expect(accessToken).To(Equal(testAccessToken))
 			})
 

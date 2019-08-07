@@ -31,7 +31,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
 )
 
-var _ = Describe("ServiceInstanceUrlResolver", func() {
+var _ = Describe("ServiceInstanceResolver", func() {
 
 	const (
 		errMessage              = "some error"
@@ -40,16 +40,44 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 		testGuid                = "1558aa56-97a5-47cd-a73c-7d5cd0818b22"
 		scs2DashboardUrl        = "https://spring-cloud-broker.example.com/dashboard/p-config-server/1558aa56-97a5-47cd-a73c-7d5cd0818b22"
 		scs3DashboardUrl        = "https://config-server-1558aa56-97a5-47cd-a73c-7d5cd0818b22.example.com/dashboard"
+		scs2ServiceOfferingName = "p-config-server"
+		scs3ServiceOfferingName = "p.config-server"
+		servicePlanName         = "standard"
 	)
+
+	scs2ServiceModel := func() plugin_models.GetService_Model {
+		return plugin_models.GetService_Model{
+			ServiceOffering: plugin_models.GetService_ServiceFields{
+				Name: scs2ServiceOfferingName,
+			},
+			ServicePlan: plugin_models.GetService_ServicePlan{
+				Name: servicePlanName,
+			},
+			DashboardUrl: scs2DashboardUrl,
+			Guid:         testGuid,
+		}
+	}
+
+	scs3ServiceModel := func() plugin_models.GetService_Model {
+		return plugin_models.GetService_Model{
+			ServiceOffering: plugin_models.GetService_ServiceFields{
+				Name: scs3ServiceOfferingName,
+			},
+			ServicePlan: plugin_models.GetService_ServicePlan{
+				Name: servicePlanName,
+			},
+			DashboardUrl: scs3DashboardUrl,
+			Guid:         testGuid,
+		}
+	}
 
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		accessToken       string
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		resolvedUrl       string
 		err               error
 		testError         error
-		resolver          serviceutil.ServiceInstanceUrlResolver
+		resolver          serviceutil.ServiceInstanceResolver
 	)
 
 	BeforeEach(func() {
@@ -63,6 +91,10 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 	})
 
 	Describe("GetServiceInstanceUrl", func() {
+		var (
+			resolvedUrl string
+		)
+
 		JustBeforeEach(func() {
 			resolvedUrl, err = resolver.GetServiceInstanceUrl(testServiceInstanceName, accessToken)
 		})
@@ -84,12 +116,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 
 		Context("when an SCS 2 service instance is found", func() {
 			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-					ServiceOffering: plugin_models.GetService_ServiceFields{
-						Name: "p-config-server",
-					},
-					DashboardUrl: "https://spring-cloud-broker.example.com/dashboard/p-config-server/guid",
-				}, nil)
+				fakeCliConnection.GetServiceReturns(scs2ServiceModel(), nil)
 			})
 
 			Context("when the dashboard URL is not in the correct format", func() {
@@ -97,7 +124,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 					BeforeEach(func() {
 						fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
 							ServiceOffering: plugin_models.GetService_ServiceFields{
-								Name: "p-config-server",
+								Name: scs2ServiceOfferingName,
 							},
 							DashboardUrl: "://",
 						}, nil)
@@ -113,7 +140,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 					BeforeEach(func() {
 						fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
 							ServiceOffering: plugin_models.GetService_ServiceFields{
-								Name: "p-config-server",
+								Name: scs2ServiceOfferingName,
 							},
 							DashboardUrl: "https://spring-cloud-broker.example.com",
 						}, nil)
@@ -213,12 +240,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 
 		Context("when an SCS 3 service instance is found", func() {
 			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-					ServiceOffering: plugin_models.GetService_ServiceFields{
-						Name: "p.config-server",
-					},
-					DashboardUrl: "https://config-server-guid.example.com/dashboard",
-				}, nil)
+				fakeCliConnection.GetServiceReturns(scs3ServiceModel(), nil)
 			})
 
 			Context("when the dashboard URL is not in the correct format", func() {
@@ -226,7 +248,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 					BeforeEach(func() {
 						fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
 							ServiceOffering: plugin_models.GetService_ServiceFields{
-								Name: "p.config-server",
+								Name: scs3ServiceOfferingName,
 							},
 							DashboardUrl: "://",
 						}, nil)
@@ -240,15 +262,16 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 
 				It("should return the service instance url", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(resolvedUrl).To(Equal("https://config-server-guid.example.com/"))
+					Expect(resolvedUrl).To(Equal("https://config-server-1558aa56-97a5-47cd-a73c-7d5cd0818b22.example.com/"))
 				})
 			})
 		})
 	})
 
-	Describe("GetManagementEndpoint", func() {
+	Describe("GetManagementParameters", func() {
 		var (
 			isLifecycleOperation bool
+			resolvedParameters   serviceutil.ManagementParameters
 		)
 
 		BeforeEach(func() {
@@ -256,7 +279,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 		})
 
 		JustBeforeEach(func() {
-			resolvedUrl, err = resolver.GetManagementUrl(
+			resolvedParameters, err = resolver.GetManagementParameters(
 				testServiceInstanceName,
 				testAccessToken,
 				isLifecycleOperation)
@@ -279,13 +302,7 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 
 		Context("when an SCS 2 service instance is found", func() {
 			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-					ServiceOffering: plugin_models.GetService_ServiceFields{
-						Name: "p-config-server",
-					},
-					DashboardUrl: scs2DashboardUrl,
-					Guid:         testGuid,
-				}, nil)
+				fakeCliConnection.GetServiceReturns(scs2ServiceModel(), nil)
 			})
 
 			Context("when it's a lifecycle operation", func() {
@@ -294,7 +311,11 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 				})
 
 				It("returns the cli endpoint on the broker", func() {
-					Expect(resolvedUrl).To(Equal(fmt.Sprintf("https://spring-cloud-broker.example.com/cli/instances/%s", testGuid)))
+					Expect(resolvedParameters).To(Equal(serviceutil.ManagementParameters{
+						Url:                 fmt.Sprintf("https://spring-cloud-broker.example.com/cli/instances/%s", testGuid),
+						ServiceOfferingName: scs2ServiceOfferingName,
+						ServicePlanName:     servicePlanName,
+					}))
 				})
 			})
 
@@ -304,20 +325,18 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 				})
 
 				It("returns the cli endpoint on the broker", func() {
-					Expect(resolvedUrl).To(Equal(fmt.Sprintf("https://spring-cloud-broker.example.com/cli/instances/%s", testGuid)))
+					Expect(resolvedParameters).To(Equal(serviceutil.ManagementParameters{
+						Url:                 fmt.Sprintf("https://spring-cloud-broker.example.com/cli/instances/%s", testGuid),
+						ServiceOfferingName: scs2ServiceOfferingName,
+						ServicePlanName:     servicePlanName,
+					}))
 				})
 			})
 		})
 
 		Context("when an SCS 3 service instance is found", func() {
 			BeforeEach(func() {
-				fakeCliConnection.GetServiceReturns(plugin_models.GetService_Model{
-					ServiceOffering: plugin_models.GetService_ServiceFields{
-						Name: "p.config-server",
-					},
-					DashboardUrl: scs3DashboardUrl,
-					Guid:         testGuid,
-				}, nil)
+				fakeCliConnection.GetServiceReturns(scs3ServiceModel(), nil)
 			})
 
 			Context("when it's a lifecycle operation", func() {
@@ -326,7 +345,11 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 				})
 
 				It("returns the cli endpoint on the broker", func() {
-					Expect(resolvedUrl).To(Equal(fmt.Sprintf("https://scs-service-broker.example.com/cli/instances/%s", testGuid)))
+					Expect(resolvedParameters).To(Equal(serviceutil.ManagementParameters{
+						Url:                 fmt.Sprintf("https://scs-service-broker.example.com/cli/instances/%s", testGuid),
+						ServiceOfferingName: scs3ServiceOfferingName,
+						ServicePlanName:     servicePlanName,
+					}))
 				})
 			})
 
@@ -336,11 +359,16 @@ var _ = Describe("ServiceInstanceUrlResolver", func() {
 				})
 
 				It("returns the cli endpoint on the backing app", func() {
-					Expect(resolvedUrl).To(Equal(fmt.Sprintf("https://config-server-%[1]s.example.com/cli/instances/%[1]s", testGuid)))
+					Expect(resolvedParameters).To(Equal(serviceutil.ManagementParameters{
+						Url:                 fmt.Sprintf("https://config-server-%[1]s.example.com/cli/instances/%[1]s", testGuid),
+						ServiceOfferingName: scs3ServiceOfferingName,
+						ServicePlanName:     servicePlanName,
+					}))
 				})
 			})
 		})
 	})
+
 })
 
 type badReader struct {

@@ -30,16 +30,22 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
 
+type ManagementParameters struct {
+	Url                 string `json:"-"`
+	ServiceOfferingName string `json:"serviceOfferingName"`
+	ServicePlanName     string `json:"planName"`
+}
+
 type serviceDefinitionResp struct {
 	Credentials struct {
 		URI string
 	}
 }
 
-//go:generate counterfeiter . ServiceInstanceUrlResolver
-type ServiceInstanceUrlResolver interface {
+//go:generate counterfeiter . ServiceInstanceResolver
+type ServiceInstanceResolver interface {
 	GetServiceInstanceUrl(serviceInstanceName string, accessToken string) (string, error)
-	GetManagementUrl(serviceInstanceName string, accessToken string, lifecycleOperation bool) (string, error)
+	GetManagementParameters(serviceInstanceName string, accessToken string, lifecycleOperation bool) (ManagementParameters, error)
 }
 
 type serviceInstanceUrlResolver struct {
@@ -47,7 +53,7 @@ type serviceInstanceUrlResolver struct {
 	authClient    httpclient.AuthenticatedClient
 }
 
-func NewServiceInstanceUrlResolver(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient) ServiceInstanceUrlResolver {
+func NewServiceInstanceUrlResolver(cliConnection plugin.CliConnection, authClient httpclient.AuthenticatedClient) ServiceInstanceResolver {
 	return &serviceInstanceUrlResolver{
 		cliConnection: cliConnection,
 		authClient:    authClient,
@@ -67,17 +73,27 @@ func (s *serviceInstanceUrlResolver) GetServiceInstanceUrl(serviceInstanceName s
 	}
 }
 
-func (s *serviceInstanceUrlResolver) GetManagementUrl(serviceInstanceName string, accessToken string, lifecycleOperation bool) (string, error) {
+func (s *serviceInstanceUrlResolver) GetManagementParameters(serviceInstanceName string, accessToken string, lifecycleOperation bool) (ManagementParameters, error) {
 	serviceModel, err := s.cliConnection.GetService(serviceInstanceName)
 	if err != nil {
-		return "", fmt.Errorf("Service instance not found: %s", err)
+		return ManagementParameters{}, fmt.Errorf("Service instance not found: %s", err)
 	}
 
+	var managementUrl string
 	if isV2ServiceInstance(serviceModel) {
-		return s.getV2ManagementUrl(serviceModel)
+		managementUrl, err = s.getV2ManagementUrl(serviceModel)
 	} else {
-		return s.getV3ManagementUrl(serviceModel, lifecycleOperation)
+		managementUrl, err = s.getV3ManagementUrl(serviceModel, lifecycleOperation)
 	}
+	if err != nil {
+		return ManagementParameters{}, fmt.Errorf("unable to resolve management managementUrl: %s", err)
+	}
+
+	return ManagementParameters{
+		Url:                 managementUrl,
+		ServiceOfferingName: serviceModel.ServiceOffering.Name,
+		ServicePlanName:     serviceModel.ServicePlan.Name,
+	}, nil
 }
 
 func (s *serviceInstanceUrlResolver) getV2ServiceInstanceUrl(dashboardUrl string, accessToken string) (string, error) {

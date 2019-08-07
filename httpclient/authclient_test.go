@@ -44,6 +44,8 @@ var _ = Describe("Authclient", func() {
 		testUrl               = "https://eureka.pivotal.io/auth/request"
 		testAccessToken       = "access-token"
 		testBearerAccessToken = "bearer " + testAccessToken
+		testBodyType          = "body-type"
+		testBody              = "body"
 		errMessage            = "I'm sorry Dave, I'm afraid I can't do that."
 	)
 
@@ -193,11 +195,6 @@ var _ = Describe("Authclient", func() {
 	})
 
 	Describe("DoAuthenticatedPost", func() {
-		const (
-			testBodyType = "body-type"
-			testBody     = "body"
-		)
-
 		var (
 			respBody io.ReadCloser
 			bodyType string
@@ -291,15 +288,22 @@ var _ = Describe("Authclient", func() {
 	})
 
 	Describe("DoAuthenticatedPut", func() {
+		var (
+			bodyType string
+			body     string
+		)
+
 		BeforeEach(func() {
 			URL = testUrl
+			bodyType = testBodyType
+			body = testBody
 			resp := &http.Response{StatusCode: http.StatusOK}
 			fakeClient.DoReturns(resp, nil)
 		})
 
 		JustBeforeEach(func() {
 			authClient := httpclient.NewAuthenticatedClient(fakeClient)
-			status, err = authClient.DoAuthenticatedPut(URL, testAccessToken)
+			status, err = authClient.DoAuthenticatedPut(URL, bodyType, body, testAccessToken)
 		})
 
 		Context("when the URL is invalid", func() {
@@ -321,6 +325,40 @@ var _ = Describe("Authclient", func() {
 		It("should pass the status code back", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(status).To(Equal(http.StatusOK))
+		})
+
+		It("should send a request with the correct body", func() {
+			Expect(fakeClient.DoCallCount()).To(Equal(1))
+			req := fakeClient.DoArgsForCall(0)
+			bodyContents, readErr := ioutil.ReadAll(req.Body)
+			Expect(readErr).NotTo(HaveOccurred())
+			Expect(string(bodyContents)).To(Equal(testBody))
+		})
+
+		It("should send a request with the correct content type header", func() {
+			Expect(fakeClient.DoCallCount()).To(Equal(1))
+			req := fakeClient.DoArgsForCall(0)
+			Expect(req.Header.Get("Content-Type")).To(Equal(bodyType))
+		})
+
+		Context("when the body is empty", func() {
+			BeforeEach(func() {
+				body = ""
+			})
+
+			It("should send a request with an empty body", func() {
+				Expect(fakeClient.DoCallCount()).To(Equal(1))
+				req := fakeClient.DoArgsForCall(0)
+				bodyContents, readErr := ioutil.ReadAll(req.Body)
+				Expect(readErr).NotTo(HaveOccurred())
+				Expect(string(bodyContents)).To(Equal(""))
+			})
+
+			It("should not set the content type header", func() {
+				Expect(fakeClient.DoCallCount()).To(Equal(1))
+				req := fakeClient.DoArgsForCall(0)
+				Expect(req.Header.Get("Content-Type")).To(Equal(""))
+			})
 		})
 
 		Context("when the request fails", func() {

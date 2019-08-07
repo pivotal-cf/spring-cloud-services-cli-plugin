@@ -33,20 +33,17 @@ var _ = Describe("Encrypter", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceResolver
 		testError         error
-		//postResponse      io.ReadCloser
-		//postStatusCode    int
-		//postErr           error
-		output    string
-		err       error
-		encrypter config.Encrypter
+		output            string
+		err               error
+		encrypter         config.Encrypter
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceResolver{}
 		testError = errors.New(errorText)
 
 		fakeCliConnection.AccessTokenReturns(bearerAccessToken, nil)

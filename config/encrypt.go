@@ -19,10 +19,10 @@ type Encrypter interface {
 type encrypter struct {
 	cliConnection              plugin.CliConnection
 	authenticatedClient        httpclient.AuthenticatedClient
-	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver
 }
 
-func NewEncrypter(cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) Encrypter {
+func NewEncrypter(cliConnection plugin.CliConnection, authenticatedClient httpclient.AuthenticatedClient, serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver) Encrypter {
 	return &encrypter{
 		cliConnection:              cliConnection,
 		authenticatedClient:        authenticatedClient,

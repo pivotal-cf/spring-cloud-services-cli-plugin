@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 )
 
 type FakeOperation struct {
@@ -18,10 +19,10 @@ type FakeOperation struct {
 	isServiceBrokerOperationReturnsOnCall map[int]struct {
 		result1 bool
 	}
-	RunStub        func(string, string) (string, error)
+	RunStub        func(serviceutil.ManagementParameters, string) (string, error)
 	runMutex       sync.RWMutex
 	runArgsForCall []struct {
-		arg1 string
+		arg1 serviceutil.ManagementParameters
 		arg2 string
 	}
 	runReturns struct {
@@ -88,11 +89,11 @@ func (fake *FakeOperation) IsServiceBrokerOperationReturnsOnCall(i int, result1 
 	}{result1}
 }
 
-func (fake *FakeOperation) Run(arg1 string, arg2 string) (string, error) {
+func (fake *FakeOperation) Run(arg1 serviceutil.ManagementParameters, arg2 string) (string, error) {
 	fake.runMutex.Lock()
 	ret, specificReturn := fake.runReturnsOnCall[len(fake.runArgsForCall)]
 	fake.runArgsForCall = append(fake.runArgsForCall, struct {
-		arg1 string
+		arg1 serviceutil.ManagementParameters
 		arg2 string
 	}{arg1, arg2})
 	fake.recordInvocation("Run", []interface{}{arg1, arg2})
@@ -113,13 +114,13 @@ func (fake *FakeOperation) RunCallCount() int {
 	return len(fake.runArgsForCall)
 }
 
-func (fake *FakeOperation) RunCalls(stub func(string, string) (string, error)) {
+func (fake *FakeOperation) RunCalls(stub func(serviceutil.ManagementParameters, string) (string, error)) {
 	fake.runMutex.Lock()
 	defer fake.runMutex.Unlock()
 	fake.RunStub = stub
 }
 
-func (fake *FakeOperation) RunArgsForCall(i int) (string, string) {
+func (fake *FakeOperation) RunArgsForCall(i int) (serviceutil.ManagementParameters, string) {
 	fake.runMutex.RLock()
 	defer fake.runMutex.RUnlock()
 	argsForCall := fake.runArgsForCall[i]
