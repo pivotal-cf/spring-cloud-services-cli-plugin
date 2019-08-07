@@ -41,7 +41,7 @@ type InfoResp struct {
 	Peers     []Peer
 }
 
-func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) (string, error) {
+func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstanceName string, serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {
 		return "", err

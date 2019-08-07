@@ -2,6 +2,7 @@ package instance_test
 
 import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
 	"errors"
 	"net/http"
@@ -23,8 +24,8 @@ var _ = Describe("View", func() {
 	const testAccessToken = "someaccesstoken"
 
 	var (
-		fakeAuthClient          *httpclientfakes.FakeAuthenticatedClient
-		serviceInstanceAdminURL string
+		fakeAuthClient                      *httpclientfakes.FakeAuthenticatedClient
+		serviceInstanceManagementParameters serviceutil.ManagementParameters
 
 		output string
 		err    error
@@ -32,12 +33,13 @@ var _ = Describe("View", func() {
 
 	BeforeEach(func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		serviceInstanceAdminURL = "https://some.host/x/y/cli/instances/someguid"
-
+		serviceInstanceManagementParameters = serviceutil.ManagementParameters{
+			Url: "https://some.host/x/y/cli/instances/someguid",
+		}
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.NewViewOperation(fakeAuthClient).Run(serviceInstanceAdminURL, testAccessToken)
+		output, err = instance.NewViewOperation(fakeAuthClient).Run(serviceInstanceManagementParameters, testAccessToken)
 	})
 
 	It("should issue a GET with the correct parameters", func() {

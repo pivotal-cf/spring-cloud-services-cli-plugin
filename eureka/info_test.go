@@ -40,7 +40,7 @@ var _ = Describe("Service Registry Info", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeClient        *httpclientfakes.FakeClient
-		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceResolver
 		output            string
 		err               error
 	)
@@ -48,7 +48,7 @@ var _ = Describe("Service Registry Info", func() {
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeClient = &httpclientfakes.FakeClient{}
-		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceResolver{}
 		fakeResolver.GetServiceInstanceUrlReturns("https://eureka-dashboard-url/", nil)
 	})
 

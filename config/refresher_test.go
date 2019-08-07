@@ -26,14 +26,14 @@ var _ = Describe("Refresher", func() {
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		refresher         config.Refresher
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceResolver
 		refreshError      error
 	)
 
 	BeforeEach(func() {
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceResolver{}
 
 		fakeCliConnection.AccessTokenReturns(bearerAccessToken, nil)
 		fakeResolver.GetServiceInstanceUrlReturns(serviceURI, nil)

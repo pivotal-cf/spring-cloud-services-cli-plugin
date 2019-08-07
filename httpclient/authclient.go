@@ -31,7 +31,7 @@ type AuthenticatedClient interface {
 
 	DoAuthenticatedPost(url string, bodyType string, body string, accessToken string) (io.ReadCloser, int, error)
 
-	DoAuthenticatedPut(url string, accessToken string) (int, error)
+	DoAuthenticatedPut(url string, bodyType string, bodyStr string, accessToken string) (int, error)
 }
 
 type authenticatedClient struct {
@@ -99,13 +99,17 @@ func (c *authenticatedClient) DoAuthenticatedPost(url string, bodyType string, b
 	return resp.Body, resp.StatusCode, nil
 }
 
-func (c *authenticatedClient) DoAuthenticatedPut(url string, accessToken string) (int, error) {
-	req, err := http.NewRequest("PUT", url, nil)
+func (c *authenticatedClient) DoAuthenticatedPut(url string, bodyType string, bodyStr string, accessToken string) (int, error) {
+	body := strings.NewReader(bodyStr)
+	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
 		return 0, fmt.Errorf("Request creation error: %s", err)
 	}
 
 	addAuthorizationHeader(req, accessToken)
+	if bodyStr != "" {
+		req.Header.Set("Content-Type", bodyType)
+	}
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return 0, fmt.Errorf("Authenticated put of '%s' failed: %s", url, err)

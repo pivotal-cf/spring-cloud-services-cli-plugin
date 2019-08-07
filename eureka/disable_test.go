@@ -36,8 +36,10 @@ var _ = Describe("Disable", func() {
 
 	It("should issue a PUT with the correct parameters", func() {
 		Expect(fakeAuthClient.DoAuthenticatedPutCallCount()).To(Equal(1))
-		url, accessToken := fakeAuthClient.DoAuthenticatedPutArgsForCall(0)
+		url, bodyType, body, accessToken := fakeAuthClient.DoAuthenticatedPutArgsForCall(0)
 		Expect(url).To(Equal("https://some.host/x/y/cli/instances/someguideureka/apps/eureakappname/instanceid/status?value=OUT_OF_SERVICE"))
+		Expect(bodyType).To(Equal(""))
+		Expect(body).To(Equal(""))
 		Expect(accessToken).To(Equal(testAccessToken))
 		Expect(err).NotTo(HaveOccurred())
 	})

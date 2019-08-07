@@ -57,11 +57,13 @@ type FakeAuthenticatedClient struct {
 		result2 int
 		result3 error
 	}
-	DoAuthenticatedPutStub        func(string, string) (int, error)
+	DoAuthenticatedPutStub        func(string, string, string, string) (int, error)
 	doAuthenticatedPutMutex       sync.RWMutex
 	doAuthenticatedPutArgsForCall []struct {
 		arg1 string
 		arg2 string
+		arg3 string
+		arg4 string
 	}
 	doAuthenticatedPutReturns struct {
 		result1 int
@@ -275,17 +277,19 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedPostReturnsOnCall(i int, res
 	}{result1, result2, result3}
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedPut(arg1 string, arg2 string) (int, error) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPut(arg1 string, arg2 string, arg3 string, arg4 string) (int, error) {
 	fake.doAuthenticatedPutMutex.Lock()
 	ret, specificReturn := fake.doAuthenticatedPutReturnsOnCall[len(fake.doAuthenticatedPutArgsForCall)]
 	fake.doAuthenticatedPutArgsForCall = append(fake.doAuthenticatedPutArgsForCall, struct {
 		arg1 string
 		arg2 string
-	}{arg1, arg2})
-	fake.recordInvocation("DoAuthenticatedPut", []interface{}{arg1, arg2})
+		arg3 string
+		arg4 string
+	}{arg1, arg2, arg3, arg4})
+	fake.recordInvocation("DoAuthenticatedPut", []interface{}{arg1, arg2, arg3, arg4})
 	fake.doAuthenticatedPutMutex.Unlock()
 	if fake.DoAuthenticatedPutStub != nil {
-		return fake.DoAuthenticatedPutStub(arg1, arg2)
+		return fake.DoAuthenticatedPutStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -300,17 +304,17 @@ func (fake *FakeAuthenticatedClient) DoAuthenticatedPutCallCount() int {
 	return len(fake.doAuthenticatedPutArgsForCall)
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedPutCalls(stub func(string, string) (int, error)) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPutCalls(stub func(string, string, string, string) (int, error)) {
 	fake.doAuthenticatedPutMutex.Lock()
 	defer fake.doAuthenticatedPutMutex.Unlock()
 	fake.DoAuthenticatedPutStub = stub
 }
 
-func (fake *FakeAuthenticatedClient) DoAuthenticatedPutArgsForCall(i int) (string, string) {
+func (fake *FakeAuthenticatedClient) DoAuthenticatedPutArgsForCall(i int) (string, string, string, string) {
 	fake.doAuthenticatedPutMutex.RLock()
 	defer fake.doAuthenticatedPutMutex.RUnlock()
 	argsForCall := fake.doAuthenticatedPutArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
 func (fake *FakeAuthenticatedClient) DoAuthenticatedPutReturns(result1 int, result2 error) {

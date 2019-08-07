@@ -134,9 +134,9 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 		})
 
 	case "spring-cloud-service-configuration":
-		configServerInstanceName := getServiceInstanceName(argsConsumer)
+		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
-			return operationRunner.RunOperation(configServerInstanceName, instance.NewParametersOperation(authClient))
+			return operationRunner.RunOperation(serviceInstanceName, instance.NewParametersOperation(authClient))
 		})
 
 	case "service-registry-enable":

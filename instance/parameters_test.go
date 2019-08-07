@@ -3,6 +3,7 @@ package instance_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
 	"bytes"
 	"errors"
@@ -20,19 +21,21 @@ var _ = Describe("Parameters", func() {
 	)
 
 	var (
-		fakeAuthClient          *httpclientfakes.FakeAuthenticatedClient
-		serviceInstanceAdminURL string
-		output                  string
-		err                     error
+		fakeAuthClient                 *httpclientfakes.FakeAuthenticatedClient
+		serviceInstanceAdminParameters serviceutil.ManagementParameters
+		output                         string
+		err                            error
 	)
 
 	BeforeEach(func() {
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		serviceInstanceAdminURL = "https://servicebroker.host/cli/instances/si-guid"
+		serviceInstanceAdminParameters = serviceutil.ManagementParameters{
+			Url: "https://servicebroker.host/cli/instances/si-guid",
+		}
 	})
 
 	JustBeforeEach(func() {
-		output, err = instance.NewParametersOperation(fakeAuthClient).Run(serviceInstanceAdminURL, testAccessToken)
+		output, err = instance.NewParametersOperation(fakeAuthClient).Run(serviceInstanceAdminParameters, testAccessToken)
 	})
 
 	It("should issue a GET to the service broker parameters endpoint with the correct parameters", func() {

@@ -139,7 +139,7 @@ func cfAppName(cfApps []plugin_models.GetAppsModel, cfAppGuid string) (string, e
 type InstanceOperation func(authClient httpclient.AuthenticatedClient, eurekaUrl string, eurekaAppName string, instanceId string, accessToken string) error
 
 func OperateOnApplication(cliConnection plugin.CliConnection, srInstanceName string, cfAppName string, authClient httpclient.AuthenticatedClient, instanceIndex *int, progressWriter io.Writer,
-	serviceInstanceURLResolver serviceutil.ServiceInstanceUrlResolver,
+	serviceInstanceURLResolver serviceutil.ServiceInstanceResolver,
 	operate InstanceOperation) (string, error) {
 	accessToken, err := cfutil.GetToken(cliConnection)
 	if err != nil {

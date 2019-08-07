@@ -52,7 +52,7 @@ var _ = Describe("OperateOnApplication", func() {
 	var (
 		fakeCliConnection *pluginfakes.FakeCliConnection
 		fakeAuthClient    *httpclientfakes.FakeAuthenticatedClient
-		fakeResolver      *serviceutilfakes.FakeServiceInstanceUrlResolver
+		fakeResolver      *serviceutilfakes.FakeServiceInstanceResolver
 		progressWriter    *bytes.Buffer
 		output            string
 
@@ -71,7 +71,7 @@ var _ = Describe("OperateOnApplication", func() {
 
 		fakeCliConnection = &pluginfakes.FakeCliConnection{}
 		fakeAuthClient = &httpclientfakes.FakeAuthenticatedClient{}
-		fakeResolver = &serviceutilfakes.FakeServiceInstanceUrlResolver{}
+		fakeResolver = &serviceutilfakes.FakeServiceInstanceResolver{}
 
 		fakeAuthClient.DoAuthenticatedGetReturns(ioutil.NopCloser(bytes.NewBufferString("https://fake.com")), 200, nil)
 		fakeResolver.GetServiceInstanceUrlReturns("https://eureka-dashboard-url/", nil)

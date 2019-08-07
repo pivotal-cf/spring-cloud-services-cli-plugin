@@ -24,7 +24,7 @@ import (
 
 //go:generate counterfeiter . Operation
 type Operation interface {
-	Run(serviceInstanceAdminURL string, accessToken string) (string, error)
+	Run(serviceInstanceAdminParameters serviceutil.ManagementParameters, accessToken string) (string, error)
 	IsServiceBrokerOperation() bool
 }
 
@@ -34,12 +34,12 @@ type OperationRunner interface {
 
 type authenticatedOperationRunner struct {
 	cliConnection              plugin.CliConnection
-	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver
 }
 
 func NewAuthenticatedOperationRunner(
 	cliConnection plugin.CliConnection,
-	serviceInstanceUrlResolver serviceutil.ServiceInstanceUrlResolver) OperationRunner {
+	serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver) OperationRunner {
 
 	return &authenticatedOperationRunner{
 		cliConnection:              cliConnection,
@@ -56,7 +56,7 @@ func (aor *authenticatedOperationRunner) RunOperation(
 		return "", err
 	}
 
-	serviceInstanceAdminURL, err := aor.serviceInstanceUrlResolver.GetManagementUrl(
+	managementParameters, err := aor.serviceInstanceUrlResolver.GetManagementParameters(
 		serviceInstanceName,
 		accessToken,
 		operation.IsServiceBrokerOperation())
@@ -65,5 +65,5 @@ func (aor *authenticatedOperationRunner) RunOperation(
 		return "", err
 	}
 
-	return operation.Run(serviceInstanceAdminURL, accessToken)
+	return operation.Run(managementParameters, accessToken)
 }

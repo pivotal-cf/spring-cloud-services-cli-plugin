@@ -17,7 +17,9 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 )
@@ -26,8 +28,13 @@ type stopOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
-func (so *stopOperation) Run(serviceInstanceAdminURL string, accessToken string) (string, error) {
-	_, err := so.authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?stop=", serviceInstanceAdminURL), accessToken)
+func (so *stopOperation) Run(serviceInstanceManagementParameters serviceutil.ManagementParameters, accessToken string) (string, error) {
+	jsonBytes, err := json.Marshal(serviceInstanceManagementParameters)
+	if err != nil {
+		return "", err
+	}
+	body := string(jsonBytes)
+	_, err = so.authenticatedClient.DoAuthenticatedPut(fmt.Sprintf("%s/command?stop=", serviceInstanceManagementParameters.Url), "application/json", body, accessToken)
 	return "", err
 }
 

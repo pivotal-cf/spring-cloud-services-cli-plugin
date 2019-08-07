@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 	"io/ioutil"
 	"net/http"
 )
@@ -28,8 +29,8 @@ type parametersOperation struct {
 	authenticatedClient httpclient.AuthenticatedClient
 }
 
-func (po *parametersOperation) Run(serviceInstanceAdminURL string, accessToken string) (string, error) {
-	bodyReader, statusCode, err := po.authenticatedClient.DoAuthenticatedGet(serviceInstanceAdminURL+"/parameters", accessToken)
+func (po *parametersOperation) Run(serviceInstanceManagementParameters serviceutil.ManagementParameters, accessToken string) (string, error) {
+	bodyReader, statusCode, err := po.authenticatedClient.DoAuthenticatedGet(serviceInstanceManagementParameters.Url+"/parameters", accessToken)
 	if err != nil {
 		return "", err
 	}
