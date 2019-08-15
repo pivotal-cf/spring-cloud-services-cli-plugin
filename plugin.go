@@ -95,7 +95,7 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			}
 		})
 
-	case "config-server-refresh":
+	case "config-server-sync-mirrors":
 		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
 
 		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
@@ -249,11 +249,11 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				},
 			},
 			{
-				Name:     "config-server-refresh",
-				HelpText: "Refresh Git mirrors associated with given Spring Cloud Services configuration server",
-				Alias:    "csr",
+				Name:     "config-server-sync-mirrors",
+				HelpText: "Synchronize Git mirrors associated with given Spring Cloud Services configuration server",
+				Alias:    "cssm",
 				UsageDetails: plugin.Usage{
-					Usage: `   cf config-server-refresh CONFIG_SERVER_INSTANCE_NAME`,
+					Usage: `   cf config-server-sync-mirrors CONFIG_SERVER_INSTANCE_NAME`,
 				},
 			},
 			{
