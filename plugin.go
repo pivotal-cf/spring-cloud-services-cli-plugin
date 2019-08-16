@@ -103,6 +103,25 @@ func (c *Plugin) Run(cliConnection plugin.CliConnection, args []string) {
 			return "Successfully refreshed mirrors", refresher.Refresh(configServerInstanceName)
 		})
 
+	case "config-server-add-credhub-secret":
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		configServerCredHubPath := getConfigServerCredHubPath(argsConsumer)
+		configServerCredHubSecret := getConfigServerCredHubSecret(argsConsumer)
+
+		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
+			credHubSecret := config.NewCredHubSecret(cliConnection, authClient, serviceInstanceUrlResolver)
+			return "Successfully added secret", credHubSecret.Add(configServerInstanceName, configServerCredHubPath, configServerCredHubSecret)
+		})
+
+	case "config-server-remove-credhub-secret":
+		configServerInstanceName := getConfigServerInstanceName(argsConsumer)
+		configServerCredHubPath := getConfigServerCredHubPath(argsConsumer)
+
+		runActionQuietly(argsConsumer, cliConnection, func() (string, error) {
+			credHubSecret := config.NewCredHubSecret(cliConnection, authClient, serviceInstanceUrlResolver)
+			return "Successfully removed secret", credHubSecret.Remove(configServerInstanceName, configServerCredHubPath)
+		})
+
 	case "spring-cloud-service-stop":
 		serviceInstanceName := getServiceInstanceName(argsConsumer)
 		runAction(argsConsumer, cliConnection, fmt.Sprintf("Stopping service instance %s", format.Bold(format.Cyan(serviceInstanceName))), func(progressWriter io.Writer) (string, error) {
@@ -185,6 +204,14 @@ func getConfigServerInstanceName(ac *cli.ArgConsumer) string {
 	return ac.Consume(1, "configuration server instance name")
 }
 
+func getConfigServerCredHubPath(ac *cli.ArgConsumer) string {
+	return ac.Consume(2, "configuration server credhub path")
+}
+
+func getConfigServerCredHubSecret(ac *cli.ArgConsumer) string {
+	return ac.Consume(3, "configuration server credhub secret")
+}
+
 func getServiceInstanceName(ac *cli.ArgConsumer) string {
 	return ac.Consume(1, "service instance name")
 }
@@ -254,6 +281,22 @@ func (c *Plugin) GetMetadata() plugin.PluginMetadata {
 				Alias:    "csr",
 				UsageDetails: plugin.Usage{
 					Usage: `   cf config-server-refresh CONFIG_SERVER_INSTANCE_NAME`,
+				},
+			},
+			{
+				Name:     "config-server-add-credhub-secret",
+				HelpText: "Add secret in JSON format to the given path",
+				Alias:    "cs-add",
+				UsageDetails: plugin.Usage{
+					Usage: `   cf config-server-add-credhub-secret CONFIG_SERVER_INSTANCE_NAME CREDHUB_PATH JSON_SECRET`,
+				},
+			},
+			{
+				Name:     "config-server-remove-credhub-secret",
+				HelpText: "Remove secrets from the given path",
+				Alias:    "cs-remove",
+				UsageDetails: plugin.Usage{
+					Usage: `   cf config-server-remove-credhub-secret CONFIG_SERVER_INSTANCE_NAME CREDHUB_PATH`,
 				},
 			},
 			{
