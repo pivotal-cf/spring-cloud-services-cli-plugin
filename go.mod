@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20170428003108-f4415fafc561
-	code.cloudfoundry.org/cli v6.43.0+incompatible
+	code.cloudfoundry.org/cli v6.46.0+incompatible
 	github.com/fatih/color v0.0.0-20161025120501-bf82308e8c85
 	github.com/golang/protobuf v0.0.0-20151023031640-5baca1b63153 // indirect
 	github.com/kr/pretty v0.1.0 // indirect
