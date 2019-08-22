@@ -44,7 +44,7 @@ var _ = Describe("CredhubSecret", func() {
 	Describe("CredHub Add Secret", func() {
 
 		JustBeforeEach(func() {
-			secretsError = credhubSecret.Add(configServerName, "application/cloud/one", "{\"key\":\"secret\"}")
+			secretsError = credhubSecret.Add(configServerName, "application/cloud/master/one", "{\"key\":\"secret\"}")
 		})
 
 		BeforeEach(func() {
@@ -56,7 +56,7 @@ var _ = Describe("CredhubSecret", func() {
 			Expect(fakeAuthClient.DoAuthenticatedPutCallCount()).Should(Equal(1))
 
 			url, bodyType, body, token := fakeAuthClient.DoAuthenticatedPutArgsForCall(0)
-			Expect(url).To(Equal(secretsURI + "/application/cloud/one"))
+			Expect(url).To(Equal(secretsURI + "/application/cloud/master/one"))
 			Expect(token).To(Equal(accessToken))
 			Expect(bodyType).To(Equal("application/json"))
 			Expect(body).To(Equal("{\"key\":\"secret\"}"))
@@ -68,7 +68,7 @@ var _ = Describe("CredhubSecret", func() {
 
 			BeforeEach(func() {
 				fakeAuthClient.DoAuthenticatedPutReturns(500, e)
-				secretsError = credhubSecret.Add("fake-service-name", "application/cloud/one", "{\"key\":\"secret\"}")
+				secretsError = credhubSecret.Add("fake-service-name", "application/cloud/master/one", "{\"key\":\"secret\"}")
 			})
 
 			It("should return error message", func() {
@@ -82,7 +82,24 @@ var _ = Describe("CredhubSecret", func() {
 
 			BeforeEach(func() {
 				fakeAuthClient.DoAuthenticatedPutReturns(403, e)
-				secretsError = credhubSecret.Add("old-service-name", "application/cloud/one", "{\"key\":\"secret\"}")
+				secretsError = credhubSecret.Add("old-service-name", "application/cloud/master/one", "{\"key\":\"secret\"}")
+			})
+
+			It("should return error message", func() {
+				Expect(secretsError).To(Equal(e))
+			})
+		})
+
+		Context("when add calls with invalid path", func() {
+
+			var e = errors.New("CredHub path does not include required fields: {appName}/{profile}/{label}/{propertyName}")
+
+			JustBeforeEach(func() {
+				secretsError = credhubSecret.Add("old-service-name", "application/default/one", "{\"key\":\"secret\"}")
+			})
+
+			BeforeEach(func() {
+				fakeAuthClient.DoAuthenticatedPutReturns(200, nil)
 			})
 
 			It("should return error message", func() {
@@ -94,7 +111,7 @@ var _ = Describe("CredhubSecret", func() {
 	Describe("CredHub Remove Secret", func() {
 
 		JustBeforeEach(func() {
-			secretsError = credhubSecret.Remove(configServerName, "application/cloud/one")
+			secretsError = credhubSecret.Remove(configServerName, "application/cloud/master/one")
 		})
 
 		BeforeEach(func() {
@@ -106,7 +123,7 @@ var _ = Describe("CredhubSecret", func() {
 			Expect(fakeAuthClient.DoAuthenticatedDeleteCallCount()).Should(Equal(1))
 
 			url, token := fakeAuthClient.DoAuthenticatedDeleteArgsForCall(0)
-			Expect(url).To(Equal(secretsURI + "/application/cloud/one"))
+			Expect(url).To(Equal(secretsURI + "/application/cloud/master/one"))
 			Expect(token).To(Equal(accessToken))
 		})
 
@@ -116,7 +133,7 @@ var _ = Describe("CredhubSecret", func() {
 
 			BeforeEach(func() {
 				fakeAuthClient.DoAuthenticatedDeleteReturns(500, e)
-				secretsError = credhubSecret.Remove("fake-service-name", "application/cloud/one")
+				secretsError = credhubSecret.Remove("fake-service-name", "application/cloud/master/one")
 			})
 
 			It("should return error message", func() {
@@ -130,12 +147,30 @@ var _ = Describe("CredhubSecret", func() {
 
 			BeforeEach(func() {
 				fakeAuthClient.DoAuthenticatedDeleteReturns(403, e)
-				secretsError = credhubSecret.Remove("old-service-name", "application/cloud/one")
+				secretsError = credhubSecret.Remove("old-service-name", "application/cloud/master/one")
 			})
 
 			It("should return error message", func() {
 				Expect(secretsError).To(Equal(e))
 			})
 		})
+
+		Context("when remove calls with invalid path", func() {
+
+			var e = errors.New("CredHub path does not include required fields: {appName}/{profile}/{label}/{propertyName}")
+
+			JustBeforeEach(func() {
+				secretsError = credhubSecret.Remove("old-service-name", "application/default/one")
+			})
+
+			BeforeEach(func() {
+				fakeAuthClient.DoAuthenticatedDeleteReturns(200, nil)
+			})
+
+			It("should return error message", func() {
+				Expect(secretsError).To(Equal(e))
+			})
+		})
+
 	})
 })

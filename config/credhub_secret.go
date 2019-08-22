@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
+	"strings"
 )
 
 type CredHubSecret interface {
@@ -30,6 +31,11 @@ func NewCredHubSecret(connection plugin.CliConnection, client httpclient.Authent
 
 func (r *credHubSecret) Add(configServerInstanceName string, credHubPath string, credHubSecret string) error {
 	accessToken, err := cfutil.GetToken(r.cliConnection)
+	if err != nil {
+		return err
+	}
+
+	err = validateCredHubPath(credHubPath)
 	if err != nil {
 		return err
 	}
@@ -59,6 +65,11 @@ func (r *credHubSecret) Remove(configServerInstanceName string, credHubPath stri
 		return err
 	}
 
+	err = validateCredHubPath(credHubPath)
+	if err != nil {
+		return err
+	}
+
 	serviceInstanceUrl, err := r.serviceInstanceUrlResolver.GetServiceInstanceUrl(configServerInstanceName, accessToken)
 	if err != nil {
 		return fmt.Errorf("error obtaining config server URL: %s", err)
@@ -75,5 +86,12 @@ func (r *credHubSecret) Remove(configServerInstanceName string, credHubPath stri
 		return e
 	}
 
+	return nil
+}
+
+func validateCredHubPath(credHubPath string) error {
+	if strings.Count(credHubPath, "/") != 3 {
+		return errors.New("CredHub path does not include required fields: {appName}/{profile}/{label}/{propertyName}")
+	}
 	return nil
 }
