@@ -19,10 +19,11 @@ package eureka_test
 import (
 	"errors"
 	"fmt"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil/serviceutilfakes"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil/serviceutilfakes"
 
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	. "github.com/onsi/ginkgo"
@@ -143,7 +144,7 @@ var _ = Describe("Service Registry Info", func() {
 					It("should have sent a request to the correct URL", func() {
 						Expect(fakeClient.DoCallCount()).To(Equal(1))
 						req := fakeClient.DoArgsForCall(0)
-						Expect(req.URL.String()).To(Equal("https://eureka-dashboard-url/info"))
+						Expect(req.URL.String()).To(Equal("https://eureka-dashboard-url/actuator/info"))
 					})
 
 					It("should have sent a request with the correct accept header", func() {

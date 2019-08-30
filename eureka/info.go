@@ -52,7 +52,7 @@ func Info(cliConnection plugin.CliConnection, client httpclient.Client, srInstan
 		return "", fmt.Errorf("Error obtaining service registry URL: %s", err)
 	}
 
-	req, err := http.NewRequest("GET", eureka+"info", nil)
+	req, err := http.NewRequest("GET", eureka+"actuator/info", nil)
 	if err != nil {
 		// Should never get here
 		return "", fmt.Errorf("Unexpected error: %s", err)
