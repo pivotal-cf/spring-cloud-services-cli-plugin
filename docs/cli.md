@@ -5,22 +5,45 @@ The following commands can be executed using the Spring Cloud Services [Cloud Fo
 # Spring Cloud Services CLI Docs
 
 
-## `cf config-server-encrypt-value`
+## `cf config-server-add-credhub-secret`
 
 ```
 NAME:
-   config-server-encrypt-value - Encrypt a string using a Spring Cloud Services configuration server
+   config-server-add-credhub-secret - Add secret in JSON format to the given path
 
 USAGE:
-      cf config-server-encrypt-value CONFIG_SERVER_INSTANCE_NAME [VALUE_TO_ENCRYPT]
-
-      NOTE: Either VALUE_TO_ENCRYPT or --file-to-encrypt flag is required, but not both.
+      cf config-server-add-credhub-secret CONFIG_SERVER_INSTANCE_NAME CREDHUB_PATH JSON_SECRET
 
 ALIAS:
-   csev
+   cs-add
+```
 
-OPTIONS:
-   --f/--file-to-encrypt      A text file (with UTF-8 encoding) whose contents are to be encrypted. Cannot be used with VALUE_TO_ENCRYPT parameter.
+
+## `cf config-server-remove-credhub-secret`
+
+```
+NAME:
+   config-server-remove-credhub-secret - Remove secrets from the given path
+
+USAGE:
+      cf config-server-remove-credhub-secret CONFIG_SERVER_INSTANCE_NAME CREDHUB_PATH
+
+ALIAS:
+   cs-remove
+```
+
+
+## `cf config-server-sync-mirrors`
+
+```
+NAME:
+   config-server-sync-mirrors - Synchronize Git mirrors associated with given Spring Cloud Services configuration server
+
+USAGE:
+      cf config-server-sync-mirrors CONFIG_SERVER_INSTANCE_NAME
+
+ALIAS:
+   cssm
 ```
 
 
