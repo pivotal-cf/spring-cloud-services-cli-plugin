@@ -53,7 +53,7 @@ resource_types:
 - name: slack-notification
   type: registry-image
   source:
-    repository: cfcommunity/slack-notification-resource
+    repository: ((dockerhub-mirror-registry))/cfcommunity/slack-notification-resource
     tag: latest
 
 resources:
