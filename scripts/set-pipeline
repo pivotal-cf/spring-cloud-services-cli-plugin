@@ -2,30 +2,17 @@
 
 set -euo pipefail
 
-readonly SCS_SECRETS_LAST_PASS_ID="5793183462"
-
-secrets_file=$(mktemp)
-
-fetch_secrets() {
-  lpass show --notes "${SCS_SECRETS_LAST_PASS_ID}" > "${secrets_file}"
-}
-
 set_pipeline() {
-  fly -t scs set-pipeline -p cf-cli-plugin -c pipeline.yml -l config.yml -l "${secrets_file}"
+  fly --target scs set-pipeline --pipeline cf-cli-plugin \
+    --config pipeline.yml \
+    --var branch=main
 }
-
-cleanup() {
-  rm "${secrets_file}"
-}
-
-trap "cleanup" EXIT
 
 main() {
-  fly -t scs sync
+  fly --target scs sync
 
   pushd "$(dirname $0)/../ci" > /dev/null
 
-  fetch_secrets
   set_pipeline
 
   popd > /dev/null
