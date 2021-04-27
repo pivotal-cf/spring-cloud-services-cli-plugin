@@ -5,15 +5,15 @@ slack-success-notification: &slack-success-notification
     icon_emoji: ":concourse:"
     username: concourse
     channel: ((scs-slack-notification-channel))
-    text: "<!here> CF CLI plugin $BUILD_JOB_NAME has succeeded with build <https://scs.ci.springapps.io/builds/$BUILD_ID|$BUILD_NAME>!"
+    text: "<!here> CF CLI plugin $BUILD_JOB_NAME has succeeded with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 slack-failure-notification: &slack-failure-notification
   put: alert
   params:
-    icon_emoji: ":animal:"
+    icon_emoji: ":animal-1252:"
     username: concourse
     channel: ((scs-slack-failure-channel))
-    text: "<!here> CF CLI plugin $BUILD_JOB_NAME has failed with build <https://scs.ci.springapps.io/builds/$BUILD_ID|$BUILD_NAME>!"
+    text: "<!here> CF CLI plugin $BUILD_JOB_NAME has failed with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 jobs:
 - name: build-plugin
@@ -51,7 +51,7 @@ jobs:
 
 resource_types:
 - name: slack-notification
-  type: docker-image
+  type: registry-image
   source:
     repository: cfcommunity/slack-notification-resource
     tag: latest
@@ -61,7 +61,7 @@ resources:
   type: git
   source:
     uri: ((github-url-cf-cli-plugin))
-    branch: master
+    branch: ((branch))
     ignore_paths: [version]
 
 - name: version
@@ -69,7 +69,7 @@ resources:
   source:
     driver: git
     uri: ((github-url-cf-cli-plugin))
-    branch: master
+    branch: ((branch))
     file: version
     initial_version: 0.0.0
 
