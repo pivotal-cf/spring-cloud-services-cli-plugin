@@ -1,7 +1,0 @@
-version: 1
-update_configs:
-  - package_manager: "go:modules"
-    target_branch: "master"
-    directory: "/"
-    update_schedule: "weekly"
-
