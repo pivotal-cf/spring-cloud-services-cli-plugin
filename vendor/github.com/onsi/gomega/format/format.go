@@ -1,9 +1,13 @@
 /*
 Gomega's format package pretty-prints objects.  It explores input objects recursively and generates formatted, indented output with type information.
 */
+
+// untested sections: 4
+
 package format
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -30,16 +34,18 @@ Set PrintContextObjects = true to enable printing of the context internals.
 */
 var PrintContextObjects = false
 
-// Ctx interface defined here to keep backwards compatability with go < 1.7
-// It matches the context.Context interface
-type Ctx interface {
-	Deadline() (deadline time.Time, ok bool)
-	Done() <-chan struct{}
-	Err() error
-	Value(key interface{}) interface{}
-}
+// TruncatedDiff choose if we should display a truncated pretty diff or not
+var TruncatedDiff = true
 
-var contextType = reflect.TypeOf((*Ctx)(nil)).Elem()
+// TruncateThreshold (default 50) specifies the maximum length string to print in string comparison assertion error
+// messages.
+var TruncateThreshold uint = 50
+
+// CharactersAroundMismatchToInclude (default 5) specifies how many contextual characters should be printed before and
+// after the first diff location in a truncated string assertion error message.
+var CharactersAroundMismatchToInclude uint = 5
+
+var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var timeType = reflect.TypeOf(time.Time{})
 
 //The default indentation string emitted by the format package
@@ -55,7 +61,7 @@ Generates a formatted matcher success/failure message of the form:
 	<message>
 		<pretty printed expected>
 
-If expected is omited, then the message looks like:
+If expected is omitted, then the message looks like:
 
 	Expected
 		<pretty printed actual>
@@ -64,9 +70,93 @@ If expected is omited, then the message looks like:
 func Message(actual interface{}, message string, expected ...interface{}) string {
 	if len(expected) == 0 {
 		return fmt.Sprintf("Expected\n%s\n%s", Object(actual, 1), message)
-	} else {
-		return fmt.Sprintf("Expected\n%s\n%s\n%s", Object(actual, 1), message, Object(expected[0], 1))
 	}
+	return fmt.Sprintf("Expected\n%s\n%s\n%s", Object(actual, 1), message, Object(expected[0], 1))
+}
+
+/*
+
+Generates a nicely formatted matcher success / failure message
+
+Much like Message(...), but it attempts to pretty print diffs in strings
+
+Expected
+    <string>: "...aaaaabaaaaa..."
+to equal               |
+    <string>: "...aaaaazaaaaa..."
+
+*/
+
+func MessageWithDiff(actual, message, expected string) string {
+	if TruncatedDiff && len(actual) >= int(TruncateThreshold) && len(expected) >= int(TruncateThreshold) {
+		diffPoint := findFirstMismatch(actual, expected)
+		formattedActual := truncateAndFormat(actual, diffPoint)
+		formattedExpected := truncateAndFormat(expected, diffPoint)
+
+		spacesBeforeFormattedMismatch := findFirstMismatch(formattedActual, formattedExpected)
+
+		tabLength := 4
+		spaceFromMessageToActual := tabLength + len("<string>: ") - len(message)
+
+		paddingCount := spaceFromMessageToActual + spacesBeforeFormattedMismatch
+		if paddingCount < 0 {
+			return Message(formattedActual, message, formattedExpected)
+		}
+
+		padding := strings.Repeat(" ", paddingCount) + "|"
+		return Message(formattedActual, message+padding, formattedExpected)
+	}
+
+	actual = escapedWithGoSyntax(actual)
+	expected = escapedWithGoSyntax(expected)
+
+	return Message(actual, message, expected)
+}
+
+func escapedWithGoSyntax(str string) string {
+	withQuotes := fmt.Sprintf("%q", str)
+	return withQuotes[1 : len(withQuotes)-1]
+}
+
+func truncateAndFormat(str string, index int) string {
+	leftPadding := `...`
+	rightPadding := `...`
+
+	start := index - int(CharactersAroundMismatchToInclude)
+	if start < 0 {
+		start = 0
+		leftPadding = ""
+	}
+
+	// slice index must include the mis-matched character
+	lengthOfMismatchedCharacter := 1
+	end := index + int(CharactersAroundMismatchToInclude) + lengthOfMismatchedCharacter
+	if end > len(str) {
+		end = len(str)
+		rightPadding = ""
+
+	}
+	return fmt.Sprintf("\"%s\"", leftPadding+str[start:end]+rightPadding)
+}
+
+func findFirstMismatch(a, b string) int {
+	aSlice := strings.Split(a, "")
+	bSlice := strings.Split(b, "")
+
+	for index, str := range aSlice {
+		if index > len(bSlice)-1 {
+			return index
+		}
+		if str != bSlice[index] {
+			return index
+		}
+	}
+
+	if len(b) > len(a) {
+		return len(a) + 1
+	}
+
+	return 0
 }
 
 /*
@@ -83,7 +173,7 @@ Set PrintContextObjects to true to print the content of objects implementing con
 func Object(object interface{}, indentation uint) string {
 	indent := strings.Repeat(Indent, int(indentation))
 	value := reflect.ValueOf(object)
-	return fmt.Sprintf("%s<%s>: %s", indent, formatType(object), formatValue(value, indentation))
+	return fmt.Sprintf("%s<%s>: %s", indent, formatType(value), formatValue(value, indentation))
 }
 
 /*
@@ -103,25 +193,20 @@ func IndentString(s string, indentation uint) string {
 	return result
 }
 
-func formatType(object interface{}) string {
-	t := reflect.TypeOf(object)
-	if t == nil {
+func formatType(v reflect.Value) string {
+	switch v.Kind() {
+	case reflect.Invalid:
 		return "nil"
-	}
-	switch t.Kind() {
 	case reflect.Chan:
-		v := reflect.ValueOf(object)
-		return fmt.Sprintf("%T | len:%d, cap:%d", object, v.Len(), v.Cap())
+		return fmt.Sprintf("%s | len:%d, cap:%d", v.Type(), v.Len(), v.Cap())
 	case reflect.Ptr:
-		return fmt.Sprintf("%T | %p", object, object)
+		return fmt.Sprintf("%s | 0x%x", v.Type(), v.Pointer())
 	case reflect.Slice:
-		v := reflect.ValueOf(object)
-		return fmt.Sprintf("%T | len:%d, cap:%d", object, v.Len(), v.Cap())
+		return fmt.Sprintf("%s | len:%d, cap:%d", v.Type(), v.Len(), v.Cap())
 	case reflect.Map:
-		v := reflect.ValueOf(object)
-		return fmt.Sprintf("%T | len:%d", object, v.Len())
+		return fmt.Sprintf("%s | len:%d", v.Type(), v.Len())
 	default:
-		return fmt.Sprintf("%T", object)
+		return fmt.Sprintf("%s", v.Type())
 	}
 }
 
@@ -180,19 +265,18 @@ func formatValue(value reflect.Value, indentation uint) string {
 	case reflect.Map:
 		return formatMap(value, indentation)
 	case reflect.Struct:
-		if value.Type() == timeType {
+		if value.Type() == timeType && value.CanInterface() {
 			t, _ := value.Interface().(time.Time)
 			return t.Format(time.RFC3339Nano)
 		}
 		return formatStruct(value, indentation)
 	case reflect.Interface:
-		return formatValue(value.Elem(), indentation)
+		return formatInterface(value, indentation)
 	default:
 		if value.CanInterface() {
 			return fmt.Sprintf("%#v", value.Interface())
-		} else {
-			return fmt.Sprintf("%#v", value)
 		}
+		return fmt.Sprintf("%#v", value)
 	}
 }
 
@@ -212,7 +296,7 @@ func formatString(object interface{}, indentation uint) string {
 			}
 		}
 
-		return fmt.Sprintf("%s", result)
+		return result
 	} else {
 		return fmt.Sprintf("%q", object)
 	}
@@ -236,9 +320,8 @@ func formatSlice(v reflect.Value, indentation uint) string {
 	if longest > longFormThreshold {
 		indenter := strings.Repeat(Indent, int(indentation))
 		return fmt.Sprintf("[\n%s%s,\n%s]", indenter+Indent, strings.Join(result, ",\n"+indenter+Indent), indenter)
-	} else {
-		return fmt.Sprintf("[%s]", strings.Join(result, ", "))
 	}
+	return fmt.Sprintf("[%s]", strings.Join(result, ", "))
 }
 
 func formatMap(v reflect.Value, indentation uint) string {
@@ -257,9 +340,8 @@ func formatMap(v reflect.Value, indentation uint) string {
 	if longest > longFormThreshold {
 		indenter := strings.Repeat(Indent, int(indentation))
 		return fmt.Sprintf("{\n%s%s,\n%s}", indenter+Indent, strings.Join(result, ",\n"+indenter+Indent), indenter)
-	} else {
-		return fmt.Sprintf("{%s}", strings.Join(result, ", "))
 	}
+	return fmt.Sprintf("{%s}", strings.Join(result, ", "))
 }
 
 func formatStruct(v reflect.Value, indentation uint) string {
@@ -280,9 +362,12 @@ func formatStruct(v reflect.Value, indentation uint) string {
 	if longest > longFormThreshold {
 		indenter := strings.Repeat(Indent, int(indentation))
 		return fmt.Sprintf("{\n%s%s,\n%s}", indenter+Indent, strings.Join(result, ",\n"+indenter+Indent), indenter)
-	} else {
-		return fmt.Sprintf("{%s}", strings.Join(result, ", "))
 	}
+	return fmt.Sprintf("{%s}", strings.Join(result, ", "))
+}
+
+func formatInterface(v reflect.Value, indentation uint) string {
+	return fmt.Sprintf("<%s>%s", formatType(v.Elem()), formatValue(v.Elem(), indentation))
 }
 
 func isNilValue(a reflect.Value) bool {
