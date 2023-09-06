@@ -2,11 +2,13 @@ package config
 
 import (
 	"code.cloudfoundry.org/cli/plugin"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/cfutil"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
+	"io"
 )
 
 type Refresher interface {
@@ -17,6 +19,27 @@ type refresher struct {
 	cliConnection              plugin.CliConnection
 	authenticatedClient        httpclient.AuthenticatedClient
 	serviceInstanceUrlResolver serviceutil.ServiceInstanceResolver
+}
+
+func checkRefreshStatus(reader io.Reader) error {
+	body, err := io.ReadAll(reader)
+	if err != nil {
+		return err
+	}
+
+	var jsonMap map[string]map[string]string
+	err = json.Unmarshal(body, &jsonMap)
+	if err != nil {
+		return err
+	}
+
+	for _, refresh := range jsonMap {
+		status := refresh["status"]
+		if status == "FAILED" {
+			return errors.New("failed to refresh mirror")
+		}
+	}
+	return nil
 }
 
 func (r *refresher) Refresh(configServerInstanceName string) error {
@@ -30,7 +53,9 @@ func (r *refresher) Refresh(configServerInstanceName string) error {
 		return fmt.Errorf("error obtaining config server URL: %s", err)
 	}
 
-	_, status, e := r.authenticatedClient.DoAuthenticatedPost(fmt.Sprintf("%sactuator/refreshmirrors", serviceInstanceUrl), "application/json", "", accessToken)
+	bodyReader, status, e := r.authenticatedClient.DoAuthenticatedPost(fmt.Sprintf("%sactuator/refreshmirrors", serviceInstanceUrl), "application/json", "", accessToken)
+	defer bodyReader.Close()
+
 	if e != nil {
 		return e
 	}
@@ -39,7 +64,7 @@ func (r *refresher) Refresh(configServerInstanceName string) error {
 		return errors.New("failed to refresh mirror")
 	}
 
-	return nil
+	return checkRefreshStatus(bodyReader)
 }
 
 func NewRefresher(connection plugin.CliConnection, client httpclient.AuthenticatedClient, resolver serviceutil.ServiceInstanceResolver) Refresher {

@@ -50,9 +50,13 @@ var _ = Describe("Refresher", func() {
 		})
 
 		Context("when refresh endpoint returns success", func() {
+			body := `{
+				"rep-1-url" : { "commitId" : "11", "status": "SUCCESS"},
+				"rep-2-url" : { "commitId" : "21", "status": "SUCCESS"}
+			}`
 
 			BeforeEach(func() {
-				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader("")), 200, nil)
+				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader(body)), 200, nil)
 			})
 
 			It("should call refresh endpoint", func() {
@@ -66,17 +70,45 @@ var _ = Describe("Refresher", func() {
 			})
 		})
 
-		Context("when refresh endpoint fails", func() {
+		Context("when refresh endpoint fails with error", func() {
 
-			var e = errors.New("failed to refresh mirror")
+			var e = errors.New("failed to refresh mirror with error")
 
 			BeforeEach(func() {
-				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader("Failed to refresh mirrors")), 500, e)
+				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader("")), 500, e)
 				refreshError = refresher.Refresh("fake-service-name")
 			})
 
-			It("should return error message", func() {
+			It("should return the provided error message", func() {
 				Expect(refreshError).To(Equal(e))
+			})
+		})
+
+		Context("when refresh fails without error message", func() {
+
+			BeforeEach(func() {
+				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader("")), 500, nil)
+				refreshError = refresher.Refresh("fake-service-name")
+			})
+
+			It("should return the default error message", func() {
+				Expect(refreshError).To(Equal(errors.New("failed to refresh mirror")))
+			})
+		})
+
+		Context("when refresh fails for at least one mirror", func() {
+			body := `{
+				"rep-1-url" : { "commitId" : "11", "status": "SUCCESS"},
+				"rep-2-url" : { "commitId" : "21", "status": "FAILED"},
+				"rep-3-url" : { "commitId" : "31", "status": "SUCCESS"}
+			}`
+			BeforeEach(func() {
+				fakeAuthClient.DoAuthenticatedPostReturns(ioutil.NopCloser(strings.NewReader(body)), 200, nil)
+				refreshError = refresher.Refresh("fake-service-name")
+			})
+
+			It("should return the error message", func() {
+				Expect(refreshError).To(Equal(errors.New("failed to refresh mirror")))
 			})
 		})
 	})
