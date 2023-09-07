@@ -22,30 +22,46 @@ jobs:
   - in_parallel:
     - get: cf-cli-plugin
       trigger: true
-    - get: version
-      params:
-        bump: patch
+    - get: build-version
+  - load_var: build-version
+    file: build-version/version
+    reveal: true
+  - put: build-version
+    inputs: detect
+    params:
+      pre: build
+    no_get: true
   - task: build-plugin
     file: cf-cli-plugin/ci/tasks/build.yml
-    on_success:
-      in_parallel:
-      - put: cf-cli-plugin-storage
-        params:
-          file: built-plugin/spring-cloud-services-cli-plugin-darwin-amd64-*
-      - put: cf-cli-plugin-storage
-        params:
-          file: built-plugin/spring-cloud-services-cli-plugin-linux-386-*
-      - put: cf-cli-plugin-storage
-        params:
-          file: built-plugin/spring-cloud-services-cli-plugin-linux-amd64-*
-      - put: cf-cli-plugin-storage
-        params:
-          file: built-plugin/spring-cloud-services-cli-plugin-windows-386-*
-      - put: cf-cli-plugin-storage
-        params:
-          file: built-plugin/spring-cloud-services-cli-plugin-windows-amd64-*
-      - put: version
-        params: {file: version/version}
+    params:
+      VERSION: ((.:build-version))
+  on_success: *slack-success-notification
+  on_failure: *slack-failure-notification
+
+- name: release-plugin
+  plan:
+  - in_parallel:
+    - do:
+      - get: release-tag
+        trigger: true
+      - load_var: release-version
+        file: release-tag/.git/ref
+        reveal: true
+    - get: cf-cli-plugin
+      passed: [ build-plugin ]
+    - get: build-version
+      passed: [ build-plugin ]
+  - task: build-plugin
+    file: cf-cli-plugin/ci/tasks/build.yml
+    params:
+      VERSION: ((.:release-version))
+  - put: github-release
+    inputs: detect
+    params:
+      name: release-tag/.git/ref
+      tag: release-tag/.git/ref
+      globs:
+      - built-plugin/spring-cloud-services-cli-plugin-*
   on_success: *slack-success-notification
   on_failure: *slack-failure-notification
 
@@ -59,30 +75,45 @@ resource_types:
 resources:
 - name: cf-cli-plugin
   type: git
+  icon: github
   source:
-    uri: ((github-url-cf-cli-plugin))
+    uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
     branch: ((branch))
-    ignore_paths: [version]
 
-- name: version
+- name: release-tag
+  type: git
+  icon: github
+  source:
+    uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
+    branch: ((branch))
+    tag_filter: v[1-9].*
+    fetch_tags: true
+
+- name: github-release
+  type: github-release
+  icon: github
+  source:
+    owner: pivotal-cf
+    repository: spring-cloud-services-cli-plugin
+    access_token: ((github/scsbot.token))
+    pre_release: true
+    release: false
+    tag_filter: ^v(d+\.d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)$
+
+- name: build-version
   type: semver
+  icon: counter
   source:
-    driver: git
-    uri: ((github-url-cf-cli-plugin))
-    branch: ((branch))
-    file: version
-    initial_version: 0.0.0
-
-- name: cf-cli-plugin-storage
-  type: s3
-  source:
+    driver: s3
     bucket: ((scs-cf-cli-s3-bucket-name))
-    regexp: spring-cloud-services-cli-plugin-(.*)
+    key: current-version
     access_key_id: ((scs-s3-access-key-id))
     secret_access_key: ((scs-s3-secret-access-key))
+    initial_version: 1.0.0-build.1
 
 - name: alert
   type: slack-notification
+  icon: slack
   source:
     # Default channel is #scs-firehose
     url: ((scs-slack-webhook))

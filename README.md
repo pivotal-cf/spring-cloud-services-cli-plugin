@@ -12,9 +12,9 @@ To build the plugin, run:
 ```bash
 $ rm $GOPATH/bin/spring-cloud-services-cli-plugin
 $ cd spring-cloud-services-cli-plugin
-$ go install -ldflags="-X main.pluginVersion=$(cat version)"
+$ go install -ldflags="-X main.pluginVersion=$VERSION"
 ```
-This builds the plugin with the current version number in the [version file](version).
+This builds the plugin with the given version number.
 
 Note: if an invalid version number is provided, the build will succeed, but the plugin will fail to install (with exit status code 64).
 
