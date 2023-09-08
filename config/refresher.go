@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 	"io"
+	"io/ioutil"
 )
 
 type Refresher interface {
@@ -22,7 +23,7 @@ type refresher struct {
 }
 
 func checkRefreshStatus(reader io.Reader) error {
-	body, err := io.ReadAll(reader)
+	body, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return err
 	}
