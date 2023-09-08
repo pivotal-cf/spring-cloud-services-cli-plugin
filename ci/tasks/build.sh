@@ -8,6 +8,7 @@ readonly BUILT_PLUGIN_OUTPUT="${BUILT_PLUGIN_OUTPUT?:Environment variable BUILT_
 readonly VERSION="${VERSION?:Environment variable VERSION must be set}"
 
 readonly PLUGIN_NAME="spring-cloud-services-cli-plugin"
+readonly PLUGIN_VERSION="${VERSION#v}"
 
 function get_ginkgo() {
   # Ginkgo v1.12.1 is the last version for go 1.12.
@@ -28,8 +29,8 @@ function build() {
   local platform architecture binary_name version_flag
   platform="$1"
   architecture="$2"
-  binary_name="${PLUGIN_NAME}-${platform}-${architecture}-${VERSION}"
-  version_flag="-X main.pluginVersion=${VERSION}"
+  binary_name="${PLUGIN_NAME}-${platform}-${architecture}-${PLUGIN_VERSION}"
+  version_flag="-X main.pluginVersion=${PLUGIN_VERSION}"
 
   if [ "${platform}" == "windows" ]; then
     binary_name="${binary_name}.exe"
