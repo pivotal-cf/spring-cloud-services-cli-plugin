@@ -19,7 +19,7 @@ package instance_test
 import (
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"errors"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance/instancefakes"

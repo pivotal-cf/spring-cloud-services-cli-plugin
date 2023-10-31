@@ -10,22 +10,18 @@ readonly VERSION="${VERSION?:Environment variable VERSION must be set}"
 readonly PLUGIN_NAME="spring-cloud-services-cli-plugin"
 readonly PLUGIN_VERSION="${VERSION#v}"
 
-function get_ginkgo() {
-  # Ginkgo v1.12.1 is the last version for go 1.12.
-  GO111MODULE=on go get github.com/onsi/ginkgo/ginkgo@v1.12.1
-}
+export GOFLAGS="-mod=vendor"
 
 function run_tests() {
-  export GOFLAGS="-mod=vendor"
-
   pushd "${CF_CLI_PLUGIN_INPUT}" >/dev/null
-  "${GOPATH}"/bin/ginkgo -r
+
+  go install github.com/onsi/ginkgo/v2/ginkgo
+  ginkgo -r
+
   popd >/dev/null
 }
 
 function build() {
-  export GOFLAGS="-mod=vendor"
-
   local platform architecture binary_name version_flag
   platform="$1"
   architecture="$2"
@@ -47,10 +43,10 @@ function build() {
 function main() {
   apt-get --allow-releaseinfo-change update && apt upgrade -y
 
-  get_ginkgo
   run_tests
 
   build darwin amd64
+  build darwin arm64
   build linux '386'
   build linux amd64
   build windows '386'

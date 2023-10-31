@@ -27,7 +27,7 @@ import (
 
 	"fmt"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
@@ -86,7 +86,7 @@ var _ = Describe("Authclient", func() {
 
 			It("should return a suitable error if the request cannot be created", func() {
 				Expect(body).To(BeNil())
-				Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
+				Expect(err).To(MatchError("Request creation error: parse \":\": missing protocol scheme"))
 			})
 		})
 
@@ -151,7 +151,7 @@ var _ = Describe("Authclient", func() {
 			})
 
 			It("should return a suitable error", func() {
-				Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
+				Expect(err).To(MatchError("Request creation error: parse \":\": missing protocol scheme"))
 			})
 		})
 
@@ -220,7 +220,7 @@ var _ = Describe("Authclient", func() {
 			})
 
 			It("should return a suitable error", func() {
-				Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
+				Expect(err).To(MatchError("Request creation error: parse \":\": missing protocol scheme"))
 			})
 		})
 
@@ -312,7 +312,7 @@ var _ = Describe("Authclient", func() {
 			})
 
 			It("should return a suitable error", func() {
-				Expect(err).To(MatchError("Request creation error: parse :: missing protocol scheme"))
+				Expect(err).To(MatchError("Request creation error: parse \":\": missing protocol scheme"))
 			})
 		})
 

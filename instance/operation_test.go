@@ -6,7 +6,7 @@ import (
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/instance"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
 
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
 	"fmt"

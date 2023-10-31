@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/fatih/color"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/format"
 )

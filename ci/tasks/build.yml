@@ -4,7 +4,7 @@ image_resource:
   type: registry-image
   source:
     repository: ((dockerhub-mirror-registry))/library/golang
-    tag: 1.12
+    tag: 1.20.10
 
 inputs:
 - name: cf-cli-plugin
