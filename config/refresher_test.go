@@ -3,7 +3,7 @@ package config_test
 import (
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
 	"errors"
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/config"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"

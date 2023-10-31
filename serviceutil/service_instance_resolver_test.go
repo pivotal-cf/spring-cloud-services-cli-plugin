@@ -17,18 +17,16 @@
 package serviceutil_test
 
 import (
-	"fmt"
-	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
-
 	"bytes"
-	"errors"
-	"io/ioutil"
-
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/plugin/pluginfakes"
-	. "github.com/onsi/ginkgo"
+	"errors"
+	"fmt"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/httpclient/httpclientfakes"
+	"github.com/pivotal-cf/spring-cloud-services-cli-plugin/serviceutil"
+	"io/ioutil"
 )
 
 var _ = Describe("ServiceInstanceResolver", func() {
@@ -132,7 +130,7 @@ var _ = Describe("ServiceInstanceResolver", func() {
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("parse ://: missing protocol scheme"))
+						Expect(err).To(MatchError(errors.New("missing protocol scheme")))
 					})
 				})
 
@@ -256,7 +254,7 @@ var _ = Describe("ServiceInstanceResolver", func() {
 
 					It("should return a suitable error", func() {
 						Expect(err).To(HaveOccurred())
-						Expect(err).To(MatchError("parse ://: missing protocol scheme"))
+						Expect(err).To(MatchError(errors.New("missing protocol scheme")))
 					})
 				})
 
