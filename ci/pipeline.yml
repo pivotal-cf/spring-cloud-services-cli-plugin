@@ -19,22 +19,12 @@ jobs:
 - name: build-plugin
   serial: true
   plan:
-  - in_parallel:
-    - get: cf-cli-plugin
-      trigger: true
-    - get: build-version
-  - load_var: build-version
-    file: build-version/version
-    reveal: true
-  - put: build-version
-    inputs: detect
-    params:
-      pre: build
-    no_get: true
+  - get: cf-cli-plugin
+    trigger: true
   - task: build-plugin
     file: cf-cli-plugin/ci/tasks/build.yml
     params:
-      VERSION: ((.:build-version))
+      VERSION: 0.0.0-build.1
   on_success: *slack-success-notification
   on_failure: *slack-failure-notification
 
@@ -48,8 +38,6 @@ jobs:
         file: release-tag/.git/ref
         reveal: true
     - get: cf-cli-plugin
-      passed: [ build-plugin ]
-    - get: build-version
       passed: [ build-plugin ]
   - task: build-plugin
     file: cf-cli-plugin/ci/tasks/build.yml
@@ -99,17 +87,6 @@ resources:
     pre_release: true
     release: false
     tag_filter: ^v(d+\.d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)$
-
-- name: build-version
-  type: semver
-  icon: counter
-  source:
-    driver: s3
-    bucket: ((scs-cf-cli-s3-bucket-name))
-    key: current-version
-    access_key_id: ((scs-s3-access-key-id))
-    secret_access_key: ((scs-s3-secret-access-key))
-    initial_version: 1.0.0-build.1
 
 - name: alert
   type: slack-notification
