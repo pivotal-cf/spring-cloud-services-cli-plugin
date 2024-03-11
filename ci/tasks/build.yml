@@ -7,15 +7,15 @@ image_resource:
     tag: 1.22.1
 
 inputs:
-- name: cf-cli-plugin
+- name: src
 
 outputs:
 - name: built-plugin
 
 run:
-  path: cf-cli-plugin/ci/tasks/build.sh
+  path: src/ci/tasks/build.sh
 
 params:
-  CF_CLI_PLUGIN_INPUT: cf-cli-plugin
+  CF_CLI_PLUGIN_INPUT: src
   BUILT_PLUGIN_OUTPUT: built-plugin
   VERSION: ""

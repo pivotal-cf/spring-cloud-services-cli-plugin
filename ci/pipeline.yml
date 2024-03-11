@@ -1,6 +1,6 @@
 ---
 slack-success-notification: &slack-success-notification
-  put: alert
+  put: notify
   params:
     icon_emoji: ":concourse:"
     username: concourse
@@ -8,7 +8,7 @@ slack-success-notification: &slack-success-notification
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has succeeded with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 slack-failure-notification: &slack-failure-notification
-  put: alert
+  put: notify
   params:
     icon_emoji: ":animal-1252:"
     username: concourse
@@ -16,38 +16,38 @@ slack-failure-notification: &slack-failure-notification
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has failed with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 jobs:
-- name: build-plugin
+- name: build
   serial: true
   plan:
-  - get: cf-cli-plugin
+  - get: src
     trigger: true
-  - task: build-plugin
-    file: cf-cli-plugin/ci/tasks/build.yml
+  - task: build
+    file: src/ci/tasks/build.yml
     params:
       VERSION: 0.0.0-build.1
   on_success: *slack-success-notification
   on_failure: *slack-failure-notification
 
-- name: release-plugin
+- name: release
   plan:
   - in_parallel:
     - do:
-      - get: release-tag
+      - get: version
         trigger: true
       - load_var: release-version
-        file: release-tag/.git/ref
+        file: version/.git/ref
         reveal: true
-    - get: cf-cli-plugin
-      passed: [ build-plugin ]
-  - task: build-plugin
-    file: cf-cli-plugin/ci/tasks/build.yml
+    - get: src
+      passed: [ build ]
+  - task: build
+    file: src/ci/tasks/build.yml
     params:
       VERSION: ((.:release-version))
-  - put: github-release
+  - put: release
     inputs: detect
     params:
-      name: release-tag/.git/ref
-      tag: release-tag/.git/ref
+      name: version/.git/ref
+      tag: version/.git/ref
       globs:
       - built-plugin/spring-cloud-services-cli-plugin-*
   on_success: *slack-success-notification
@@ -61,23 +61,23 @@ resource_types:
     tag: latest
 
 resources:
-- name: cf-cli-plugin
+- name: src
   type: git
   icon: github
   source:
     uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
     branch: ((branch))
 
-- name: release-tag
+- name: version
   type: git
-  icon: github
+  icon: tag
   source:
     uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
     branch: ((branch))
     tag_filter: v[1-9].*
     fetch_tags: true
 
-- name: github-release
+- name: release
   type: github-release
   icon: github
   source:
@@ -88,7 +88,7 @@ resources:
     release: false
     tag_filter: ^v(d+\.d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)$
 
-- name: alert
+- name: notify
   type: slack-notification
   icon: slack
   source:
