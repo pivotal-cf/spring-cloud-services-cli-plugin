@@ -1,6 +1,6 @@
 module github.com/pivotal-cf/spring-cloud-services-cli-plugin
 
-go 1.20
+go 1.22
 
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20231017140541-3b893ed0421b
