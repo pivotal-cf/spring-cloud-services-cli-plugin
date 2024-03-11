@@ -33,7 +33,7 @@ function build() {
   fi
 
   pushd "${CF_CLI_PLUGIN_INPUT}" >/dev/null
-  GOOS="${platform}" GOARCH="${architecture}" go build -ldflags="${version_flag}" -o "${binary_name}"
+  GOOS="${platform}" GOARCH="${architecture}" CGO_ENABLED="0" go build -ldflags="${version_flag}" -o "${binary_name}"
   echo "Built ${binary_name}"
   popd >/dev/null
 
