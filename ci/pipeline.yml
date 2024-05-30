@@ -4,7 +4,7 @@ slack-success-notification: &slack-success-notification
   params:
     icon_emoji: ":concourse:"
     username: concourse
-    channel: ((scs-slack-notification-channel))
+    channel: ((slack.notification-channel))
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has succeeded with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 slack-failure-notification: &slack-failure-notification
@@ -12,16 +12,19 @@ slack-failure-notification: &slack-failure-notification
   params:
     icon_emoji: ":animal-1252:"
     username: concourse
-    channel: ((scs-slack-failure-channel))
+    channel: ((slack.failure-channel))
     text: "<!here> CF CLI plugin $BUILD_JOB_NAME has failed with build <$ATC_EXTERNAL_URL/builds/$BUILD_ID|$BUILD_NAME>!"
 
 jobs:
 - name: build
   serial: true
   plan:
-  - get: src
-    trigger: true
+  - in_parallel:
+    - get: src
+      trigger: true
+    - get: golang-image
   - task: build
+    image: golang-image
     file: src/ci/tasks/build.yml
     params:
       VERSION: 0.0.0-build.1
@@ -39,7 +42,9 @@ jobs:
         reveal: true
     - get: src
       passed: [ build ]
+    - get: golang-image
   - task: build
+    image: golang-image
     file: src/ci/tasks/build.yml
     params:
       VERSION: ((.:release-version))
@@ -57,22 +62,24 @@ resource_types:
 - name: slack-notification
   type: registry-image
   source:
-    repository: ((dockerhub-mirror-registry))/cfcommunity/slack-notification-resource
-    tag: latest
+    repository: spring-scs-docker-virtual.((broadcom-jfrog-artifactory/host))/cfcommunity/slack-notification-resource
+    username: ((broadcom-jfrog-artifactory/robot-account.username))
+    password: ((broadcom-jfrog-artifactory/robot-account.password))
+    tag: 1.7.1
 
 resources:
 - name: src
   type: git
   icon: github
   source:
-    uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
+    uri: https://((github.token))@github.com/pivotal-cf/spring-cloud-services-cli-plugin.git
     branch: ((branch))
 
 - name: version
   type: git
   icon: tag
   source:
-    uri: https://((github/scsbot.token))@((github-url-cf-cli-plugin))
+    uri: https://((github.token))@github.com/pivotal-cf/spring-cloud-services-cli-plugin.git
     branch: ((branch))
     tag_filter: v[1-9].*
     fetch_tags: true
@@ -83,7 +90,7 @@ resources:
   source:
     owner: pivotal-cf
     repository: spring-cloud-services-cli-plugin
-    access_token: ((github/scsbot.token))
+    access_token: ((github.token))
     pre_release: true
     release: false
     tag_filter: ^v(d+\.d+\.\d+(?:-(?:alpha|beta|rc)\.\d+)?)$
@@ -93,4 +100,12 @@ resources:
   icon: slack
   source:
     # Default channel is #scs-firehose
-    url: ((scs-slack-webhook))
+    url: ((slack.webhook))
+- name: golang-image
+  type: registry-image
+  icon: docker
+  source:
+    repository: spring-scs-docker-virtual.((broadcom-jfrog-artifactory/host))/library/golang
+    username: ((broadcom-jfrog-artifactory/robot-account.username))
+    password: ((broadcom-jfrog-artifactory/robot-account.password))
+    tag: 1.22.3
