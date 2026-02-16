@@ -108,4 +108,4 @@ resources:
       repository: spring-scs-docker-virtual.((broadcom-jfrog-artifactory/host))/library/golang
       username: ((broadcom-jfrog-artifactory/robot-account.username))
       password: ((broadcom-jfrog-artifactory/robot-account.password))
-      tag: 1.22.3
+      tag: 1.26.0
