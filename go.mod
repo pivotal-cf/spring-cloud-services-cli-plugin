@@ -6,7 +6,7 @@ require (
 	code.cloudfoundry.org/bytefmt v0.64.0
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	github.com/fatih/color v1.18.0
-	github.com/onsi/ginkgo/v2 v2.28.1
+	github.com/onsi/ginkgo/v2 v2.28.2
 	github.com/onsi/gomega v1.39.1
 )
 
