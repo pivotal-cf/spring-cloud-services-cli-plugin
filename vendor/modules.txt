@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.78.0
+# code.cloudfoundry.org/bytefmt v0.79.0
 ## explicit; go 1.25.0
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v7.1.0+incompatible
@@ -112,7 +112,7 @@ golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/tools v0.46.0
+# golang.org/x/tools v0.47.0
 ## explicit; go 1.25.0
 golang.org/x/tools/cover
 golang.org/x/tools/go/ast/edge
