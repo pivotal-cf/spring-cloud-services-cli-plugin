@@ -3,7 +3,7 @@ module github.com/pivotal-cf/spring-cloud-services-cli-plugin
 go 1.26
 
 require (
-	code.cloudfoundry.org/bytefmt v0.78.0
+	code.cloudfoundry.org/bytefmt v0.80.0
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	github.com/fatih/color v1.19.0
 	github.com/onsi/ginkgo/v2 v2.32.0
@@ -24,6 +24,6 @@ require (
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/tools v0.46.0 // indirect
+	golang.org/x/text v0.39.0 // indirect
+	golang.org/x/tools v0.47.0 // indirect
 )
