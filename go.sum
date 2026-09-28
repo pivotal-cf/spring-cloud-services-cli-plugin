@@ -1,5 +1,5 @@
-code.cloudfoundry.org/bytefmt v0.90.0 h1:0YI6Rgw22aMMUXAnInBy73WvrUWlvWqZLzkJgoGfvgo=
-code.cloudfoundry.org/bytefmt v0.90.0/go.mod h1:RDBla+jDS0YPzUXaVOF2yhINP0kV2HCJGYdSYNPuaTw=
+code.cloudfoundry.org/bytefmt v0.91.0 h1:tNVXCAS9tRNQipAeq10EF8QIaodRJkT8+jUj03+6p3E=
+code.cloudfoundry.org/bytefmt v0.91.0/go.mod h1:s/EyaPgVujr3NfjH6FA+EuI2TwLLdDu3lOsR2cBWThU=
 code.cloudfoundry.org/cli v7.1.0+incompatible h1:1Zn3I+epQBaBvnZAaTudCQQ0WdqcWtjtjEV9MBZP08Y=
 code.cloudfoundry.org/cli v7.1.0+incompatible/go.mod h1:e4d+EpbwevNhyTZKybrLlyTvpH+W22vMsmdmcTxs/Fo=
 github.com/Masterminds/semver/v3 v3.5.0 h1:kQceYJfbupGfZOKZQg0kou0DgAKhzDg2NZPAwZ/2OOE=

@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.90.0
+# code.cloudfoundry.org/bytefmt v0.91.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v7.1.0+incompatible
