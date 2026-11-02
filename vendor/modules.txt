@@ -1,4 +1,4 @@
-# code.cloudfoundry.org/bytefmt v0.95.0
+# code.cloudfoundry.org/bytefmt v0.96.0
 ## explicit; go 1.26.0
 code.cloudfoundry.org/bytefmt
 # code.cloudfoundry.org/cli v7.1.0+incompatible
@@ -27,7 +27,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/pprof v0.0.0-20261016150608-1facf8f91b50
+# github.com/google/pprof v0.0.0-20261026192309-dbd0ed30aa88
 ## explicit; go 1.26.0
 github.com/google/pprof/profile
 # github.com/mattn/go-colorable v0.1.14
