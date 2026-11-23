@@ -3,7 +3,7 @@ module github.com/pivotal-cf/spring-cloud-services-cli-plugin
 go 1.26.0
 
 require (
-	code.cloudfoundry.org/bytefmt v0.98.0
+	code.cloudfoundry.org/bytefmt v0.99.0
 	code.cloudfoundry.org/cli v7.1.0+incompatible
 	github.com/fatih/color v1.19.0
 	github.com/onsi/ginkgo/v2 v2.34.0
@@ -15,7 +15,7 @@ require (
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/pprof v0.0.0-20261105003125-4bf881d7fb0b // indirect
+	github.com/google/pprof v0.0.0-20261111200114-fac431ef4d26 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
