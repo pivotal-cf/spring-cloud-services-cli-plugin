@@ -1,0 +1,68 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  GOFLAGS: -mod=vendor
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Verify modules and vendor directory
+        run: |
+          go mod verify
+          GOFLAGS= go mod vendor
+          git diff --exit-code -- go.mod go.sum vendor
+      - name: Vet
+        run: go vet ./...
+      - name: Test
+        run: |
+          go install github.com/onsi/ginkgo/v2/ginkgo
+          ginkgo -r
+
+  build:
+    name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { goos: darwin, goarch: amd64 }
+          - { goos: darwin, goarch: arm64 }
+          - { goos: linux, goarch: '386' }
+          - { goos: linux, goarch: amd64 }
+          - { goos: windows, goarch: '386' }
+          - { goos: windows, goarch: amd64 }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: '0'
+        run: go build -o /dev/null .
+
+  pr-checks:
+    name: PR checks
+    if: always()
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          [ "${{ needs.test.result }}" = success ] && [ "${{ needs.build.result }}" = success ]
